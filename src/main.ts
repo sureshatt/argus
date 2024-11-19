@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 
 type NetIface = {
   name: String,
@@ -11,6 +11,10 @@ type NetIface = {
   is_broadcast: boolean,
   is_multicast: boolean,
   is_p2p: boolean
+}
+
+type NetLogEvent = {
+  log: String
 }
 
 async function fetchNetworkInterfaces() {
@@ -65,6 +69,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (selectedRadio) {
       console.log(`Selected Row ID: ${selectedRadio.value}`);
+
+      const onEvent = new Channel<NetLogEvent>();
+
+      onEvent.onmessage = (message) => {
+        console.log(`got download event ${message.log}`);
+      };
+      invoke('listen_to_event', { interface: selectedRadio.value, channel: onEvent });
+
     } else {
       console.log('No row selected');
     }
