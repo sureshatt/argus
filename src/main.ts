@@ -31,29 +31,17 @@ async function fetchNetworkInterfaces() {
     const interfaces: NetIface[] = await invoke('get_network_interfaces');
     console.log('Network Interfaces:', interfaces);
 
-    var defaultChecked = false; // the default selected interface
     interfaces.forEach(iface => {
       const tr = document.createElement('tr');
-
-      if (!defaultChecked && iface.ipv4_address != "127.0.0.1/8") {
-        tr.innerHTML = `
-          <td><input type="radio" name="rowSelect" value="${iface.name}" checked></td>
-          <td>${iface.name}</td>
-          <td>${iface.mac}</td>
-          <td>${iface.ipv4_address}</td>
-        `;
-        defaultChecked = true;
-      } else {
-        tr.innerHTML = `
+      tr.innerHTML = `
           <td><input type="radio" name="rowSelect" value="${iface.name}"></td>
           <td>${iface.name}</td>
           <td>${iface.mac}</td>
           <td>${iface.ipv4_address}</td>
         `;
-      }
+
       tbody.appendChild(tr);
     });
-
 
   } catch (error) {
     console.error('Error fetching network interfaces:', error);

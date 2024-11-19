@@ -19,15 +19,21 @@ pub struct NetLogEvent {
 fn listen_to_event(interface: String, channel: tauri::ipc::Channel<NetLogEvent>) {
     println!("channel called: {}", interface);
 
-    for i in 0..5 {
+    std::thread::spawn(move || {
 
-        let event = NetLogEvent {
-            log: "hello".to_string() + &&i.to_string(),
-        };
+        loop {
+            let event = NetLogEvent {
+                log: "hello from: ".to_string() + &interface + "-" + &channel.id().to_string(),
+            };
 
-        channel.send(event).unwrap();
-        println!("channel ended: {}", interface);
-    }
+            if let Err(e) = channel.send(event.clone()) {
+                eprintln!("Failed to send message: {:?}", e);
+            }
+
+            // Sleep to simulate real-time intervals
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    });
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
