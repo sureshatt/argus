@@ -9,35 +9,32 @@
   </head>
 
   <body>
-    <main class="container">
-      <h1>Welcome to Tauri</h1>
-
-      <div class="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/src/assets/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img
-            src="/src/assets/tauri.svg"
-            class="logo tauri"
-            alt="Tauri logo"
-          />
-        </a>
-        <a href="https://www.typescriptlang.org/docs" target="_blank">
-          <img
-            src="/src/assets/typescript.svg"
-            class="logo typescript"
-            alt="typescript logo"
-          />
-        </a>
+    <div class="container">
+      <div class="left-section">
+        <div class="row" id="row1">
+          <table id="interfacesTable" class="interfaces-table">
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>Interface</th>
+                <th>MAC</th>
+                <th>IPV4</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rows will be dynamically generated -->
+            </tbody>
+          </table>
+        </div>
+        <div class="row" id="row2">
+        </div>
+        <div class="row" id="row3"></div>
+        <!-- More rows can be added dynamically -->
       </div>
-      <p>Click on the Tauri logo to learn more about the framework</p>
-
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-      <p id="greet-msg"></p>
-    </main>
+      <div class="right-section" id="right-section">
+        <!-- Content dynamically generated here -->
+      </div>
+    </div>
+  
   </body>
 </html>
