@@ -14,7 +14,7 @@ type NetIface = {
 }
 
 type NetLogEvent = {
-  log: String
+  log: string
 }
 
 async function fetchNetworkInterfaces() {
@@ -70,12 +70,17 @@ window.addEventListener("DOMContentLoaded", () => {
     if (selectedRadio) {
       console.log(`Selected Row ID: ${selectedRadio.value}`);
 
-      const onEvent = new Channel<NetLogEvent>();
+      const channel = new Channel<NetLogEvent>();
+      invoke('listen_to_event', { interface: selectedRadio.value, channel: channel });
 
-      onEvent.onmessage = (message) => {
-        console.log(`got download event ${message.log}`);
+      channel.onmessage = (event) => {
+        console.log(`got NetLogEvent ${event.log}`);
+        const messagesDiv = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.textContent = event.log;
+        messagesDiv?.appendChild(messageDiv);
       };
-      invoke('listen_to_event', { interface: selectedRadio.value, channel: onEvent });
 
     } else {
       console.log('No row selected');
