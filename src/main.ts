@@ -58,8 +58,14 @@ window.addEventListener("DOMContentLoaded", () => {
     if (selectedRadio) {
       console.log(`Selected Row ID: ${selectedRadio.value}`);
 
+      invoke('toggle_kill_current_channel_flag');
+      setTimeout(() => {
+        console.log("After 1-second delay");
+      }, 2000); 
+      invoke('toggle_kill_current_channel_flag');
+      
       const channel = new Channel<NetLogEvent>();
-      invoke('listen_to_event', { interface: selectedRadio.value, channel: channel });
+      invoke('listen_to_event', { interface: selectedRadio.value, channel: channel }).then(() => console.log("thread completed"));
 
       channel.onmessage = (event) => {
         console.log(`got NetLogEvent ${event.log}`);
@@ -70,8 +76,6 @@ window.addEventListener("DOMContentLoaded", () => {
         messagesDiv?.appendChild(messageDiv);
       };
 
-    } else {
-      console.log('No row selected');
     }
   });
 });
