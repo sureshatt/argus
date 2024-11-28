@@ -1,4 +1,5 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 type NetIface = {
   name: String,
@@ -11,10 +12,6 @@ type NetIface = {
   is_broadcast: boolean,
   is_multicast: boolean,
   is_p2p: boolean
-}
-
-type NetLogEvent = {
-  log: string
 }
 
 async function fetchNetworkInterfaces() {
@@ -50,32 +47,33 @@ async function fetchNetworkInterfaces() {
 
 fetchNetworkInterfaces();
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", () => { // run only after the page is loaded
 
-  document.querySelector('#interfacesTable')?.addEventListener('change', () => {
-    const selectedRadio = document.querySelector('input[name="rowSelect"]:checked') as HTMLInputElement;
+  document.querySelector('#interfacesTable')?.addEventListener('change', () => { // run only after the table changed
 
-    if (selectedRadio) {
-      console.log(`Selected Row ID: ${selectedRadio.value}`);
+    document.querySelectorAll<HTMLInputElement>('input[name="rowSelect"]').forEach((input) => {
+      input.addEventListener("change", (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        invoke("set_selection", { selection: target.value });
+      });
+    });
 
-      invoke('toggle_kill_current_channel_flag');
-      setTimeout(() => {
-        console.log("After 1-second delay");
-      }, 2000); 
-      invoke('toggle_kill_current_channel_flag');
-      
-      const channel = new Channel<NetLogEvent>();
-      invoke('listen_to_event', { interface: selectedRadio.value, channel: channel }).then(() => console.log("thread completed"));
+    listen<string>("update", (event) => {
+      console.log(`got NetLogEvent ${event.payload}`);
 
-      channel.onmessage = (event) => {
-        console.log(`got NetLogEvent ${event.log}`);
-        const messagesDiv = document.getElementById('messages');
+      const messagesDiv = document.getElementById("messages");
+      if (messagesDiv) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message');
-        messageDiv.textContent = event.log;
+        messageDiv.textContent = event.payload;
+        
         messagesDiv?.appendChild(messageDiv);
-      };
+      }
+    });
 
-    }
+    
   });
 });
+
+invoke("start_loop");
+
