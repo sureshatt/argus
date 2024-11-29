@@ -1,5 +1,6 @@
 mod network;
 use network::network_interface::{get_net_ifaces, NetIface};
+use network::network_dumper::dump;
 use serde::Serialize;
 use std::thread;
 use tauri::Emitter;
@@ -19,13 +20,14 @@ pub struct NetLogEvent {
 
 #[tauri::command]
 fn start_loop(selection: String, app_handle: tauri::AppHandle) {
-    thread::spawn(move || loop {
+    thread::spawn(move ||
         if selection != "" {
             println!("selection: {}", selection);
-            let _ = app_handle.emit("update", "hello ".to_owned() + &selection);
-            thread::sleep(std::time::Duration::from_millis(500));
+            //let _ = app_handle.emit("update", "hello ".to_owned() + &selection);
+            //thread::sleep(std::time::Duration::from_millis(500));
+            dump(selection.clone(), app_handle);
         }
-    });
+    );
 }
 
 
