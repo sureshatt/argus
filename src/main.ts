@@ -16,7 +16,7 @@ type NetIface = {
 
 function handleRowSelectChange(event: Event) {
   const target = event.target as HTMLInputElement;
-  invoke("set_selection", { selection: target.value });
+  invoke("start_loop", { selection: target.value });
 }
 
 async function fetchNetworkInterfaces() {
@@ -65,6 +65,3 @@ listen<string>("update", (event) => {
     messagesDiv?.prepend(messageDiv);
   }
 });
-
-invoke("start_loop");
-
