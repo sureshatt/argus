@@ -14,6 +14,11 @@ type NetIface = {
   is_p2p: boolean
 }
 
+function handleRowSelectChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  invoke("set_selection", { selection: target.value });
+}
+
 async function fetchNetworkInterfaces() {
   try {
     const tbody = document.querySelector('#interfacesTable tbody');
@@ -36,7 +41,7 @@ async function fetchNetworkInterfaces() {
           <td>${iface.mac}</td>
           <td>${iface.ipv4_address}</td>
         `;
-
+      tr.addEventListener("change", handleRowSelectChange);
       tbody.appendChild(tr);
     });
 
@@ -47,32 +52,18 @@ async function fetchNetworkInterfaces() {
 
 fetchNetworkInterfaces();
 
-window.addEventListener("DOMContentLoaded", () => { // run only after the page is loaded
 
-  document.querySelector('#interfacesTable')?.addEventListener('change', () => { // run only after the table changed
+listen<string>("update", (event) => {
+  console.log(`got NetLogEvent ${event.payload}`);
 
-    document.querySelectorAll<HTMLInputElement>('input[name="rowSelect"]').forEach((input) => {
-      input.addEventListener("change", (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        invoke("set_selection", { selection: target.value });
-      });
-    });
+  const messagesDiv = document.getElementById("messages");
+  if (messagesDiv) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message');
+    messageDiv.textContent = event.payload;
 
-    listen<string>("update", (event) => {
-      console.log(`got NetLogEvent ${event.payload}`);
-
-      const messagesDiv = document.getElementById("messages");
-      if (messagesDiv) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message');
-        messageDiv.textContent = event.payload;
-        
-        messagesDiv?.appendChild(messageDiv);
-      }
-    });
-
-    
-  });
+    messagesDiv?.prepend(messageDiv);
+  }
 });
 
 invoke("start_loop");
