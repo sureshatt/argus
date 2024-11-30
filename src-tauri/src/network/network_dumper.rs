@@ -10,7 +10,7 @@
 extern crate pnet;
 
 use pnet::datalink::{self, NetworkInterface};
-
+use pnet::datalink::Channel::Ethernet;
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
@@ -344,16 +344,13 @@ fn handle_ethernet_frame(
 }
 
 pub fn dump(iface_name: String, app_handle: tauri::AppHandle) {
-    println!("selected interface: {}", iface_name);
-    use pnet::datalink::Channel::Ethernet;
 
-    let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
+    println!("selected interface: {}", iface_name);
 
     // Find the network interface with the provided name
-    let interfaces = datalink::interfaces();
-    let interface = interfaces
+    let interface = datalink::interfaces()
         .into_iter()
-        .filter(interface_names_match)
+        .filter(|iface: &NetworkInterface| iface.name == iface_name)
         .next()
         .unwrap_or_else(|| panic!("No such network interface: {}", iface_name));
 
