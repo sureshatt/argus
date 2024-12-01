@@ -9,8 +9,8 @@
 /// This example shows a basic packet logger using libpnet
 extern crate pnet;
 
-use pnet::datalink::{self, NetworkInterface};
 use pnet::datalink::Channel::Ethernet;
+use pnet::datalink::{self, NetworkInterface};
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
@@ -23,13 +23,21 @@ use pnet::packet::udp::UdpPacket;
 use pnet::packet::Packet;
 use pnet::util::MacAddr;
 use std::net::IpAddr;
-use tauri::Emitter;
+use std::thread;
+use tauri::{Emitter, State};
 
-fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8], app_handle: &tauri::AppHandle) {
+use crate::AppState;
+
+fn handle_udp_packet(
+    interface_name: &str,
+    source: IpAddr,
+    destination: IpAddr,
+    packet: &[u8],
+    app_handle: &tauri::AppHandle,
+) {
     let udp = UdpPacket::new(packet);
 
     if let Some(udp) = udp {
-
         let _ = app_handle.emit(
             "update",
             format!(
@@ -56,7 +64,13 @@ fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, 
     }
 }
 
-fn handle_icmp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8], app_handle: &tauri::AppHandle) {
+fn handle_icmp_packet(
+    interface_name: &str,
+    source: IpAddr,
+    destination: IpAddr,
+    packet: &[u8],
+    app_handle: &tauri::AppHandle,
+) {
     let icmp_packet = IcmpPacket::new(packet);
     if let Some(icmp_packet) = icmp_packet {
         match icmp_packet.get_icmp_type() {
@@ -119,21 +133,26 @@ fn handle_icmp_packet(interface_name: &str, source: IpAddr, destination: IpAddr,
                         icmp_packet.get_icmp_type()
                     ),
                 );
-
             } // _ => info!(
-                    //     "[{}]: ICMP packet {} -> {} (type={:?})",
-                    //     interface_name,
-                    //     source,
-                    //     destination,
-                    //     icmp_packet.get_icmp_type()
-                    //),
+              //     "[{}]: ICMP packet {} -> {} (type={:?})",
+              //     interface_name,
+              //     source,
+              //     destination,
+              //     icmp_packet.get_icmp_type()
+              //),
         }
     } else {
         println!("[{}]: Malformed ICMP Packet", interface_name);
     }
 }
 
-fn handle_icmpv6_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8], app_handle: &tauri::AppHandle) {
+fn handle_icmpv6_packet(
+    interface_name: &str,
+    source: IpAddr,
+    destination: IpAddr,
+    packet: &[u8],
+    app_handle: &tauri::AppHandle,
+) {
     let icmpv6_packet = Icmpv6Packet::new(packet);
     if let Some(icmpv6_packet) = icmpv6_packet {
         let _ = app_handle.emit(
@@ -159,10 +178,15 @@ fn handle_icmpv6_packet(interface_name: &str, source: IpAddr, destination: IpAdd
     }
 }
 
-fn handle_tcp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8], app_handle: &tauri::AppHandle) {
+fn handle_tcp_packet(
+    interface_name: &str,
+    source: IpAddr,
+    destination: IpAddr,
+    packet: &[u8],
+    app_handle: &tauri::AppHandle,
+) {
     let tcp = TcpPacket::new(packet);
     if let Some(tcp) = tcp {
-
         let _ = app_handle.emit(
             "update",
             format!(
@@ -343,16 +367,19 @@ fn handle_ethernet_frame(
     }
 }
 
-pub fn dump(iface_name: String, app_handle: tauri::AppHandle) {
+#[tauri::command]
+pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppState>) {
+    println!("selected interface: {}", selection);
 
-    println!("selected interface: {}", iface_name);
+    let selected_clone = state.selected.clone();
+   
 
     // Find the network interface with the provided name
     let interface = datalink::interfaces()
         .into_iter()
-        .filter(|iface: &NetworkInterface| iface.name == iface_name)
+        .filter(|iface: &NetworkInterface| iface.name == selection)
         .next()
-        .unwrap_or_else(|| panic!("No such network interface: {}", iface_name));
+        .unwrap_or_else(|| panic!("No such network interface: {}", selection));
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -361,7 +388,15 @@ pub fn dump(iface_name: String, app_handle: tauri::AppHandle) {
         Err(e) => panic!("packetdump: unable to create channel: {}", e),
     };
 
-    loop {
+    thread::spawn(move || loop {
+
+        let read_selected = selected_clone.read().unwrap().clone();
+
+        if read_selected != "" && read_selected!= selection {
+            println!("Quitting the thread for: {}", selection);
+            return ;
+        }
+
         let mut buf: [u8; 1600] = [0u8; 1600];
         let mut fake_ethernet_frame = MutableEthernetPacket::new(&mut buf[..]).unwrap();
 
@@ -421,5 +456,5 @@ pub fn dump(iface_name: String, app_handle: tauri::AppHandle) {
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
-    }
+    });
 }

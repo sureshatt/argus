@@ -16,7 +16,8 @@ type NetIface = {
 
 function handleRowSelectChange(event: Event) {
   const target = event.target as HTMLInputElement;
-  invoke("start_loop", { selection: target.value });
+  invoke("set_selection", { selection: target.value });
+  invoke("dump", { selection: target.value });
 }
 
 async function fetchNetworkInterfaces() {

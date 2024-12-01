@@ -1,8 +1,21 @@
 mod network;
+use std::sync::{Arc, RwLock};
+
 use network::network_interface::{get_net_ifaces, NetIface};
-use network::network_dumper::dump;
 use serde::Serialize;
-use std::thread;
+use tauri::State;
+
+#[derive(Default)]
+struct AppState {
+    selected: Arc<RwLock<String>>,
+}
+
+#[tauri::command]
+fn set_selection(state: State<AppState>, selection: String) {
+    println!("set_channel called with selection: {}", selection);
+    let mut selected = state.selected.write().unwrap();
+    *selected = selection;
+}
 
 #[tauri::command]
 fn get_network_interfaces() -> Vec<NetIface> {
@@ -17,24 +30,16 @@ pub struct NetLogEvent {
     log: String,
 }
 
-#[tauri::command]
-fn start_loop(selection: String, app_handle: tauri::AppHandle) {
-    thread::spawn(move ||
-        if selection != "" {
-            println!("selection: {}", selection);
-            dump(selection.clone(), app_handle);
-        }
-    );
-}
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(AppState::default())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             get_network_interfaces,
-            start_loop
+            set_selection,
+            network::network_dumper::dump
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
