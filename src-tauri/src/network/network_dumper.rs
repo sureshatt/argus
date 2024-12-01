@@ -12,7 +12,7 @@ extern crate pnet;
 use pnet::datalink::Channel::Ethernet;
 use pnet::datalink::{self, NetworkInterface};
 use pnet::packet::arp::ArpPacket;
-use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
 use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
 use pnet::packet::icmpv6::Icmpv6Packet;
 use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
@@ -21,7 +21,6 @@ use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::tcp::TcpPacket;
 use pnet::packet::udp::UdpPacket;
 use pnet::packet::Packet;
-use pnet::util::MacAddr;
 use std::net::IpAddr;
 use std::thread;
 use tauri::{Emitter, State};
@@ -50,15 +49,6 @@ fn handle_udp_packet(
                 udp.get_length()
             ),
         );
-        // info!(
-        //     "[{}]: UDP Packet: {}:{} > {}:{}; length: {}",
-        //     interface_name,
-        //     source,
-        //     udp.get_source(),
-        //     destination,
-        //     udp.get_destination(),
-        //     udp.get_length()
-        // );
     } else {
         println!("[{}]: Malformed UDP Packet", interface_name);
     }
@@ -88,15 +78,6 @@ fn handle_icmp_packet(
                         echo_reply_packet.get_identifier()
                     ),
                 );
-
-                // info!(
-                //     "[{}]: ICMP echo reply {} -> {} (seq={:?}, id={:?})",
-                //     interface_name,
-                //     source,
-                //     destination,
-                //     echo_reply_packet.get_sequence_number(),
-                //     echo_reply_packet.get_identifier()
-                // );
             }
             IcmpTypes::EchoRequest => {
                 let echo_request_packet = echo_request::EchoRequestPacket::new(packet).unwrap();
@@ -112,15 +93,6 @@ fn handle_icmp_packet(
                         echo_request_packet.get_identifier()
                     ),
                 );
-
-                // info!(
-                //     "[{}]: ICMP echo request {} -> {} (seq={:?}, id={:?})",
-                //     interface_name,
-                //     source,
-                //     destination,
-                //     echo_request_packet.get_sequence_number(),
-                //     echo_request_packet.get_identifier()
-                // );
             }
             _ => {
                 let _ = app_handle.emit(
@@ -133,13 +105,7 @@ fn handle_icmp_packet(
                         icmp_packet.get_icmp_type()
                     ),
                 );
-            } // _ => info!(
-              //     "[{}]: ICMP packet {} -> {} (type={:?})",
-              //     interface_name,
-              //     source,
-              //     destination,
-              //     icmp_packet.get_icmp_type()
-              //),
+            } 
         }
     } else {
         println!("[{}]: Malformed ICMP Packet", interface_name);
@@ -165,14 +131,6 @@ fn handle_icmpv6_packet(
                 icmpv6_packet.get_icmpv6_type()
             ),
         );
-
-        // info!(
-        //     "[{}]: ICMPv6 packet {} -> {} (type={:?})",
-        //     interface_name,
-        //     source,
-        //     destination,
-        //     icmpv6_packet.get_icmpv6_type()
-        // )
     } else {
         println!("[{}]: Malformed ICMPv6 Packet", interface_name);
     }
@@ -199,16 +157,6 @@ fn handle_tcp_packet(
                 packet.len()
             ),
         );
-
-        // info!(
-        //     "[{}]: TCP Packet: {}:{} > {}:{}; length: {}",
-        //     interface_name,
-        //     source,
-        //     tcp.get_source(),
-        //     destination,
-        //     tcp.get_destination(),
-        //     packet.len()
-        // );
     } else {
         println!("[{}]: Malformed TCP Packet", interface_name);
     }
