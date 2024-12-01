@@ -390,64 +390,15 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
 
     thread::spawn(move || loop {
 
+        // this logic kills the thread if the interface changes
         let read_selected = selected_clone.read().unwrap().clone();
-
         if read_selected != "" && read_selected!= selection {
             println!("Quitting the thread for: {}", selection);
             return ;
         }
 
-        let mut buf: [u8; 1600] = [0u8; 1600];
-        let mut fake_ethernet_frame = MutableEthernetPacket::new(&mut buf[..]).unwrap();
-
         match rx.next() {
             Ok(packet) => {
-                let payload_offset;
-                if cfg!(any(
-                    target_os = "macos",
-                    target_os = "ios",
-                    target_os = "tvos"
-                )) && interface.is_up()
-                    && !interface.is_broadcast()
-                    && ((!interface.is_loopback() && interface.is_point_to_point())
-                        || interface.is_loopback())
-                {
-                    if interface.is_loopback() {
-                        // The pnet code for BPF loopback adds a zero'd out Ethernet header
-                        payload_offset = 14;
-                    } else {
-                        // Maybe is TUN interface
-                        payload_offset = 0;
-                    }
-                    if packet.len() > payload_offset {
-                        let version = Ipv4Packet::new(&packet[payload_offset..])
-                            .unwrap()
-                            .get_version();
-                        if version == 4 {
-                            fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
-                            fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
-                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
-                            fake_ethernet_frame.set_payload(&packet[payload_offset..]);
-                            handle_ethernet_frame(
-                                &interface,
-                                &fake_ethernet_frame.to_immutable(),
-                                &app_handle,
-                            );
-                            continue;
-                        } else if version == 6 {
-                            fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
-                            fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
-                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
-                            fake_ethernet_frame.set_payload(&packet[payload_offset..]);
-                            handle_ethernet_frame(
-                                &interface,
-                                &fake_ethernet_frame.to_immutable(),
-                                &app_handle,
-                            );
-                            continue;
-                        }
-                    }
-                }
                 handle_ethernet_frame(
                     &interface,
                     &EthernetPacket::new(packet).unwrap(),
