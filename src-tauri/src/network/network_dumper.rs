@@ -21,11 +21,23 @@ use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::tcp::TcpPacket;
 use pnet::packet::udp::UdpPacket;
 use pnet::packet::Packet;
+use serde::Serialize;
 use std::net::IpAddr;
 use std::thread;
 use tauri::{Emitter, State};
+use chrono::{DateTime, Utc};
 
 use crate::AppState;
+
+#[derive(Debug, Serialize, Clone)]
+struct BasicNetworkPacketData {
+    time: DateTime<Utc>,
+    source: String,
+    destination: String,
+    protocol: String,
+    length: usize,
+    info: String
+}
 
 fn handle_udp_packet(
     interface_name: &str,
@@ -350,10 +362,27 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
                 handle_ethernet_frame(
                     &interface,
                     &EthernetPacket::new(packet).unwrap(),
-                    &app_handle,
+                    &app_handle,    
                 );
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
     });
+}
+
+fn get_ethernet_frame(ethernet: &EthernetPacket) -> BasicNetworkPacketData {
+    return BasicNetworkPacketData{
+        time:  Utc::now(),
+        protocol: "Ethernet".to_string(),
+        source: ethernet.get_source().to_string(),
+        destination: ethernet.get_destination().to_string(),
+        info: "ethernet".to_string(),
+        length: ethernet.payload().len()
+    };
+}
+
+fn emit_and_store(app_handle: &tauri::AppHandle, packet: BasicNetworkPacketData) {
+    let _ = app_handle.emit(
+        "update2", packet,
+    );
 }
