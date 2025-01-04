@@ -28,6 +28,7 @@ use tauri::{Emitter, State};
 use chrono::{DateTime, Utc};
 
 use crate::AppState;
+use crate::network::layers; 
 
 #[derive(Debug, Serialize, Clone)]
 struct BasicNetworkPacketData {
@@ -359,6 +360,9 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
 
         match rx.next() {
             Ok(packet) => {
+
+                let _ = layers::process_packet(packet);
+
                 handle_ethernet_frame(
                     &interface,
                     &EthernetPacket::new(packet).unwrap(),
