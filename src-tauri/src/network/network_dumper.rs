@@ -24,6 +24,7 @@ use pnet::packet::Packet;
 use serde::Serialize;
 use std::net::IpAddr;
 use std::thread;
+use std::time::Duration;
 use tauri::{Emitter, State};
 use chrono::{DateTime, Utc};
 
@@ -276,18 +277,18 @@ fn handle_arp_packet(
 ) {
     let header = ArpPacket::new(ethernet.payload());
     if let Some(header) = header {
-        let _ = app_handle.emit(
-            "update",
-            format!(
-                "[{}]: ARP packet: {}({}) > {}({}); operation: {:?}",
-                interface_name,
-                ethernet.get_source(),
-                header.get_sender_proto_addr(),
-                ethernet.get_destination(),
-                header.get_target_proto_addr(),
-                header.get_operation()
-            ),
-        );
+        // let _ = app_handle.emit(
+        //     "update",
+        //     format!(
+        //         "[{}]: ARP packet: {}({}) > {}({}); operation: {:?}",
+        //         interface_name,
+        //         ethernet.get_source(),
+        //         header.get_sender_proto_addr(),
+        //         ethernet.get_destination(),
+        //         header.get_target_proto_addr(),
+        //         header.get_operation()
+        //     ),
+        // );
     } else {
         println!("[{}]: Malformed ARP Packet", interface_name);
     }
@@ -304,26 +305,26 @@ fn handle_ethernet_frame(
         EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet, app_handle),
         EtherTypes::Arp => handle_arp_packet(interface_name, ethernet, app_handle),
         _ => {
-            let _ = app_handle.emit(
-                "update",
-                format!(
-                    "[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
-                    interface_name,
-                    ethernet.get_source(),
-                    ethernet.get_destination(),
-                    ethernet.get_ethertype(),
-                    ethernet.packet().len()
-                ),
-            );
+            // let _ = app_handle.emit(
+            //     "update",
+            //     format!(
+            //         "[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
+            //         interface_name,
+            //         ethernet.get_source(),
+            //         ethernet.get_destination(),
+            //         ethernet.get_ethertype(),
+            //         ethernet.packet().len()
+            //     ),
+            // );
 
-            println!(
-                "[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
-                interface_name,
-                ethernet.get_source(),
-                ethernet.get_destination(),
-                ethernet.get_ethertype(),
-                ethernet.packet().len()
-            )
+            // println!(
+            //     "[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
+            //     interface_name,
+            //     ethernet.get_source(),
+            //     ethernet.get_destination(),
+            //     ethernet.get_ethertype(),
+            //     ethernet.packet().len()
+            // )
         }
     }
 }
@@ -364,12 +365,13 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
             Ok(packet) => {
 
                 let _ = layers::process_packet(packet, &interface, &app_handle, &db);
+                thread::sleep(Duration::from_secs(2));
 
-                handle_ethernet_frame(
-                    &interface,
-                    &EthernetPacket::new(packet).unwrap(),
-                    &app_handle,    
-                );
+                // handle_ethernet_frame(
+                //     &interface,
+                //     &EthernetPacket::new(packet).unwrap(),
+                //     &app_handle,    
+                // );
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
