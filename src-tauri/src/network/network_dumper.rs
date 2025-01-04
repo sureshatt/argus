@@ -332,15 +332,15 @@ fn handle_ethernet_frame(
 pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppState>) {
     println!("selected interface: {}", selection);
 
-    let selected_clone = state.selected.clone();
-   
-
     // Find the network interface with the provided name
     let interface = datalink::interfaces()
         .into_iter()
         .filter(|iface: &NetworkInterface| iface.name == selection)
         .next()
         .unwrap_or_else(|| panic!("No such network interface: {}", selection));
+
+        let selected_clone = state.selected.clone();
+        let db_clone = state.db.clone();
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -358,10 +358,12 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
             return ;
         }
 
+        let db = db_clone.read().unwrap().clone();
+
         match rx.next() {
             Ok(packet) => {
 
-                let _ = layers::process_packet(packet);
+                let _ = layers::process_packet(packet, &interface, &app_handle, &db);
 
                 handle_ethernet_frame(
                     &interface,
@@ -372,21 +374,4 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
     });
-}
-
-fn get_ethernet_frame(ethernet: &EthernetPacket) -> BasicNetworkPacketData {
-    return BasicNetworkPacketData{
-        time:  Utc::now(),
-        protocol: "Ethernet".to_string(),
-        source: ethernet.get_source().to_string(),
-        destination: ethernet.get_destination().to_string(),
-        info: "ethernet".to_string(),
-        length: ethernet.payload().len()
-    };
-}
-
-fn emit_and_store(app_handle: &tauri::AppHandle, packet: BasicNetworkPacketData) {
-    let _ = app_handle.emit(
-        "update2", packet,
-    );
 }

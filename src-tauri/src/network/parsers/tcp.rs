@@ -1,6 +1,13 @@
-use pnet::packet::tcp::TcpPacket;
+use pnet::{datalink::NetworkInterface, packet::tcp::TcpPacket};
+use surrealdb::{engine::local::Db, Surreal};
+use tauri::AppHandle;
 
-pub fn parse(packet: &[u8]) -> Result<TcpPacket, String> {
+pub fn parse<'a>(
+    packet: &'a [u8],
+    interface: &'a NetworkInterface,
+    app_handle: &'a AppHandle,
+    db: &'a Surreal<Db>,
+) -> Result<TcpPacket<'a>, String> {
     if packet.len() < 20 {
         return Err("TCP segment too short".to_string());
     }

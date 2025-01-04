@@ -1,6 +1,8 @@
-use pnet::packet::udp::UdpPacket;
+use pnet::{datalink::NetworkInterface, packet::udp::UdpPacket};
+use surrealdb::{engine::local::Db, Surreal};
+use tauri::AppHandle;
 
-pub fn parse(packet: &[u8]) -> Result<UdpPacket, String> {
+pub fn parse<'a>(packet: &'a [u8], interface: &'a NetworkInterface, app_handle: &'a AppHandle, db: &'a Surreal<Db>) -> Result<UdpPacket<'a>, String> {
     if packet.len() < 8 {
         return Err("UDP datagram too short".to_string());
     }
