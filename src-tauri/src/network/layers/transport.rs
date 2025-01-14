@@ -35,9 +35,11 @@ pub fn process(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
 ) -> Result<TransportSegmentPayload, String> {
+
     match packet {
-        NetworkPacketPayload::Udp(payload) => {
-            let udp = udp::parse(payload, interface, app_handle, db)?;
+
+        NetworkPacketPayload::Udp(nested) => {
+            let udp = udp::parse(nested, interface, app_handle, db)?;
             match udp.get_destination() {
                 53 => Ok(TransportSegmentPayload::Dns(udp.payload().to_owned())),
                 67 | 68 => Ok(TransportSegmentPayload::Dhcp(udp.payload().to_owned())),
@@ -49,6 +51,7 @@ pub fn process(
                 _ => Err("Not supported".to_string()),
             }
         }
+
         NetworkPacketPayload::Tcp(paylod) => {
             let tcp = tcp::parse(paylod, interface, app_handle, db)?;
             match tcp.get_destination() {
