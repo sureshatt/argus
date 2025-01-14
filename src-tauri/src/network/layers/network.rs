@@ -45,7 +45,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(Tcp::TcpIpV4(ipv4_packet)))
                 }
                 IpNextHeaderProtocols::Icmp => {
-                    let _ = icmp::parse(ipv4_packet.payload(), interface, app_handle, db);
+                    let _ = icmp::parse(&ipv4_packet, interface, app_handle, db);
                     Ok(NetworkPacketPayload::Icmp())
                 }
                 _ => Err("Not supported".to_string()),
@@ -63,7 +63,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(Tcp::TcpIpV6(ipv6_packet)))
                 }
                 IpNextHeaderProtocols::Icmpv6 => {
-                    let _ = icmpv6::parse(ipv6_packet.payload(), interface, app_handle, db);
+                    let _ = icmpv6::parse(&ipv6_packet, interface, app_handle, db);
                     Ok(NetworkPacketPayload::Icmpv6())
                 }
                 _ => Err("Not supported".to_string()),

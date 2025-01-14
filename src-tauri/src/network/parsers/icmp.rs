@@ -1,13 +1,73 @@
-use pnet::{datalink::NetworkInterface, packet::icmp::IcmpPacket};
+use pnet::{
+    datalink::NetworkInterface,
+    packet::{
+        icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes},
+        ipv4::Ipv4Packet,
+        Packet,
+    },
+};
 use surrealdb::{engine::local::Db, Surreal};
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 
 pub fn parse(
-    packet: &[u8],
+    ipv4_packet: &Ipv4Packet,
     interface: &NetworkInterface,
     app_handle: &AppHandle,
     db: &Surreal<Db>,
 ) -> Result<(), String> {
-    let _icmp_packet = IcmpPacket::new(packet);
+    let icmp_packet = IcmpPacket::new(ipv4_packet.payload());
+    let source = ipv4_packet.get_source();
+    let destination = ipv4_packet.get_destination();
+
+    if let Some(icmp_packet) = icmp_packet {
+        match icmp_packet.get_icmp_type() {
+            IcmpTypes::EchoReply => {
+                let echo_reply_packet =
+                    echo_reply::EchoReplyPacket::new(ipv4_packet.payload()).unwrap();
+
+                let _ = app_handle.emit(
+                    "update",
+                    format!(
+                        "[{}]: ICMP echo reply {} -> {} (seq={:?}, id={:?})",
+                        &interface.name[..],
+                        source,
+                        destination,
+                        echo_reply_packet.get_sequence_number(),
+                        echo_reply_packet.get_identifier()
+                    ),
+                );
+            }
+            IcmpTypes::EchoRequest => {
+                let echo_request_packet =
+                    echo_request::EchoRequestPacket::new(ipv4_packet.payload()).unwrap();
+
+                let _ = app_handle.emit(
+                    "update",
+                    format!(
+                        "[{}]: ICMP echo request {} -> {} (seq={:?}, id={:?})",
+                        &interface.name[..],
+                        source,
+                        destination,
+                        echo_request_packet.get_sequence_number(),
+                        echo_request_packet.get_identifier()
+                    ),
+                );
+            }
+            _ => {
+                let _ = app_handle.emit(
+                    "update",
+                    format!(
+                        "[{}]: ICMP packet {} -> {} (type={:?})",
+                        &interface.name[..],
+                        source,
+                        destination,
+                        icmp_packet.get_icmp_type()
+                    ),
+                );
+            }
+        }
+    } else {
+        println!("[{}]: Malformed ICMPv6 Packet", &interface.name[..]);
+    }
     Ok(())
 }

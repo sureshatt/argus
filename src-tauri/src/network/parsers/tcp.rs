@@ -14,17 +14,23 @@ pub fn parse<'a>(
     db: &'a Surreal<Db>,
 ) -> Result<TcpPacket<'a>, String> {
     let tcp;
-    let length;
+    let tcp_length;
+    let source_ip;
+    let destination_ip;
 
     match packet {
         Tcp::TcpIpV4(ipv4_packet) => {
             tcp = TcpPacket::new(ipv4_packet.payload());
-            length = ipv4_packet.get_total_length() - (ipv4_packet.get_header_length() as u16);
+            tcp_length = ipv4_packet.get_total_length() - (ipv4_packet.get_header_length() as u16);
+            source_ip = ipv4_packet.get_source().to_string();
+            destination_ip = ipv4_packet.get_destination().to_string();
         }
 
         Tcp::TcpIpV6(ipv6_packet) => {
             tcp = TcpPacket::new(ipv6_packet.payload());
-            length = ipv6_packet.get_payload_length()
+            tcp_length = ipv6_packet.get_payload_length();
+            source_ip = ipv6_packet.get_source().to_string();
+            destination_ip = ipv6_packet.get_destination().to_string();
         }
     }
 
@@ -32,11 +38,13 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: TCP Packet: :{} > :{}; length: {}",
+                "[{}]: TCP Packet: {}:{} > {}:{}; length: {}",
                 &interface.name[..],
+                source_ip,
                 tcp.get_source(),
+                destination_ip,
                 tcp.get_destination(),
-                length
+                tcp_length
             ),
         );
 
