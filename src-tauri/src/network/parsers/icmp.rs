@@ -8,8 +8,6 @@ pub fn parse(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
 ) -> Result<(), String> {
-
     let _icmp_packet = IcmpPacket::new(packet);
     Ok(())
-    
 }

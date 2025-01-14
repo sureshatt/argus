@@ -8,7 +8,6 @@ pub fn handle(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
 ) -> Result<(), String> {
-
     let arp_frame = ArpPacket::new(packet);
 
     if let Some(arp) = arp_frame {
@@ -25,7 +24,6 @@ pub fn handle(
             ),
         );
         Ok(())
-
     } else {
         return Err("Malformed ARP Packet".to_string());
     }

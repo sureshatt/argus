@@ -19,12 +19,12 @@ pub enum NetworkPacketPayload<'a> {
 
 pub enum Udp<'a> {
     UdpIpV4(Ipv4Packet<'a>),
-    UdpIpV6(Ipv6Packet<'a>)
+    UdpIpV6(Ipv6Packet<'a>),
 }
 
 pub enum Tcp<'a> {
     TcpIpV4(Ipv4Packet<'a>),
-    TcpIpV6(Ipv6Packet<'a>)
+    TcpIpV6(Ipv6Packet<'a>),
 }
 
 pub fn process<'a>(
@@ -33,7 +33,6 @@ pub fn process<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<NetworkPacketPayload<'a>, String> {
-
     match datalink_packet {
         DatalinkPacket::Ipv4(packet) => {
             let ipv4_packet = ipv4::parse(packet, interface, app_handle, db)?;

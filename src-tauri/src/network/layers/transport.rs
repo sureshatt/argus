@@ -35,9 +35,7 @@ pub fn process(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
 ) -> Result<TransportSegmentPayload, String> {
-
     match packet {
-
         NetworkPacketPayload::Udp(nested) => {
             let udp = udp::parse(nested, interface, app_handle, db)?;
             match udp.get_destination() {

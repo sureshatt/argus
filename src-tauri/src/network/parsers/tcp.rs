@@ -1,4 +1,7 @@
-use pnet::{datalink::NetworkInterface, packet::{tcp::TcpPacket, Packet}};
+use pnet::{
+    datalink::NetworkInterface,
+    packet::{tcp::TcpPacket, Packet},
+};
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 
@@ -10,7 +13,6 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<TcpPacket<'a>, String> {
-
     let tcp;
     let length;
 
@@ -27,7 +29,6 @@ pub fn parse<'a>(
     }
 
     if let Some(tcp) = tcp {
-
         let _ = app_handle.emit(
             "update",
             format!(
@@ -43,6 +44,4 @@ pub fn parse<'a>(
     } else {
         return Err("Malformed TCP Packet".to_string());
     }
-
-    
 }

@@ -1,7 +1,10 @@
 use crate::network::parsers::{arp, ethernet};
 use pnet::{
     datalink::NetworkInterface,
-    packet::{ethernet::{EtherTypes, EthernetPacket}, Packet},
+    packet::{
+        ethernet::{EtherTypes, EthernetPacket},
+        Packet,
+    },
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::AppHandle;
@@ -17,7 +20,6 @@ pub fn process<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<DatalinkPacket<'a>, String> {
-    
     let frame = ethernet::parse(packet, interface, app_handle, db)?;
 
     match frame.get_ethertype() {

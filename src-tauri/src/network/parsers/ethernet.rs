@@ -1,4 +1,7 @@
-use pnet::{datalink::NetworkInterface, packet::{ethernet::EthernetPacket, Packet}};
+use pnet::{
+    datalink::NetworkInterface,
+    packet::{ethernet::EthernetPacket, Packet},
+};
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 
@@ -8,7 +11,6 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<EthernetPacket<'a>, String> {
-
     if packet.len() < 14 {
         return Err("Packet too short".to_string());
     }
@@ -28,9 +30,7 @@ pub fn parse<'a>(
             ),
         );
         Ok(ethernet)
-
     } else {
         return Err("Malformed ARP Packet".to_string());
     }
-
 }

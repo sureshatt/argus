@@ -1,4 +1,7 @@
-use pnet::{datalink::NetworkInterface, packet::{ethernet::EthernetPacket, ipv4::Ipv4Packet, Packet}};
+use pnet::{
+    datalink::NetworkInterface,
+    packet::{ethernet::EthernetPacket, ipv4::Ipv4Packet, Packet},
+};
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 
@@ -8,10 +11,8 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<Ipv4Packet<'a>, String> {
-
     let ipv4_packet = Ipv4Packet::new(packet.payload());
     if let Some(ipv4_packet) = ipv4_packet {
-
         let _ = app_handle.emit(
             "update",
             format!(
