@@ -1,6 +1,6 @@
-use pnet::datalink::NetworkInterface;
+use pnet::{datalink::NetworkInterface, packet::{dns::Dns, Packet}};
 use surrealdb::{engine::local::Db, Surreal};
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 
 use crate::network::layers::transport::TransportSegmentPayload;
 

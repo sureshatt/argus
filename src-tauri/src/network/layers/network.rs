@@ -2,7 +2,6 @@ use pnet::datalink::NetworkInterface;
 use pnet::packet::ip::IpNextHeaderProtocols::{self, Udp};
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
-use pnet::packet::Packet;
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::AppHandle;

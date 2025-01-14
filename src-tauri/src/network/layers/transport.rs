@@ -1,5 +1,6 @@
 use pnet::datalink::NetworkInterface;
-use pnet::packet::Packet;
+use pnet::packet::tcp::TcpPacket;
+use pnet::packet::udp::UdpPacket;
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::AppHandle;
@@ -7,45 +8,45 @@ use tauri::AppHandle;
 use crate::network::layers::network::NetworkPacketPayload;
 use crate::network::parsers::{tcp, udp};
 
-pub enum TransportSegmentPayload {
-    Dns(Vec<u8>),
-    Dhcp(Vec<u8>),
-    Tftp(Vec<u8>),
-    Ntp(Vec<u8>),
-    Snmp(Vec<u8>),
-    Rtsp(Vec<u8>),
-    Rtp(Vec<u8>),
+pub enum TransportSegmentPayload<'a> {
+    Dns(UdpPacket<'a>),
+    Dhcp(UdpPacket<'a>),
+    Tftp(UdpPacket<'a>),
+    Ntp(UdpPacket<'a>),
+    Snmp(UdpPacket<'a>),
+    Rtsp(UdpPacket<'a>),
+    Rtp(UdpPacket<'a>),
 
-    Ftp(Vec<u8>),
-    Ssh(Vec<u8>),
-    Telnet(Vec<u8>),
-    Smtp(Vec<u8>),
-    Http(Vec<u8>),
-    Pop3(Vec<u8>),
-    Imap(Vec<u8>),
-    Https(Vec<u8>),
-    SmtpSub(Vec<u8>),
-    Imaps(Vec<u8>),
-    Pop3s(Vec<u8>),
+    Ftp(TcpPacket<'a>),
+    Ssh(TcpPacket<'a>),
+    Telnet(TcpPacket<'a>),
+    Smtp(TcpPacket<'a>),
+    DnsTcp(TcpPacket<'a>),
+    Http(TcpPacket<'a>),
+    Pop3(TcpPacket<'a>),
+    Imap(TcpPacket<'a>),
+    Https(TcpPacket<'a>),
+    Imaps(TcpPacket<'a>),
+    Pop3s(TcpPacket<'a>),
 }
 
-pub fn process(
-    packet: &NetworkPacketPayload,
-    interface: &NetworkInterface,
-    app_handle: &AppHandle,
-    db: &Surreal<Db>,
-) -> Result<TransportSegmentPayload, String> {
+pub fn process<'a>(
+    packet: &'a NetworkPacketPayload<'a>,
+    interface: &'a NetworkInterface,
+    app_handle: &'a AppHandle,
+    db: &'a Surreal<Db>,
+) -> Result<TransportSegmentPayload<'a>, String> {
     match packet {
         NetworkPacketPayload::Udp(nested) => {
             let udp = udp::parse(nested, interface, app_handle, db)?;
             match udp.get_destination() {
-                53 => Ok(TransportSegmentPayload::Dns(udp.payload().to_owned())),
-                67 | 68 => Ok(TransportSegmentPayload::Dhcp(udp.payload().to_owned())),
-                69 => Ok(TransportSegmentPayload::Tftp(udp.payload().to_owned())),
-                123 => Ok(TransportSegmentPayload::Ntp(udp.payload().to_owned())),
-                161 | 162 => Ok(TransportSegmentPayload::Snmp(udp.payload().to_owned())),
-                554 => Ok(TransportSegmentPayload::Rtsp(udp.payload().to_owned())),
-                5004 | 5005 => Ok(TransportSegmentPayload::Rtp(udp.payload().to_owned())),
+                53 => Ok(TransportSegmentPayload::Dns(udp)),
+                67 | 68 => Ok(TransportSegmentPayload::Dhcp(udp)),
+                69 => Ok(TransportSegmentPayload::Tftp(udp)),
+                123 => Ok(TransportSegmentPayload::Ntp(udp)),
+                161 | 162 => Ok(TransportSegmentPayload::Snmp(udp)),
+                554 => Ok(TransportSegmentPayload::Rtsp(udp)),
+                5004 | 5005 => Ok(TransportSegmentPayload::Rtp(udp)),
                 _ => Err("Not supported".to_string()),
             }
         }
@@ -53,17 +54,17 @@ pub fn process(
         NetworkPacketPayload::Tcp(paylod) => {
             let tcp = tcp::parse(paylod, interface, app_handle, db)?;
             match tcp.get_destination() {
-                20 | 21 => Ok(TransportSegmentPayload::Ftp(tcp.payload().to_owned())),
-                22 => Ok(TransportSegmentPayload::Ssh(tcp.payload().to_owned())),
-                23 => Ok(TransportSegmentPayload::Telnet(tcp.payload().to_owned())),
-                25 => Ok(TransportSegmentPayload::Smtp(tcp.payload().to_owned())),
-                53 => Ok(TransportSegmentPayload::Dns(tcp.payload().to_owned())),
-                80 => Ok(TransportSegmentPayload::Http(tcp.payload().to_owned())),
-                110 => Ok(TransportSegmentPayload::Pop3(tcp.payload().to_owned())),
-                143 => Ok(TransportSegmentPayload::Imap(tcp.payload().to_owned())),
-                443 => Ok(TransportSegmentPayload::Https(tcp.payload().to_owned())),
-                993 => Ok(TransportSegmentPayload::Imaps(tcp.payload().to_owned())),
-                995 => Ok(TransportSegmentPayload::Pop3s(tcp.payload().to_owned())),
+                20 | 21 => Ok(TransportSegmentPayload::Ftp(tcp)),
+                22 => Ok(TransportSegmentPayload::Ssh(tcp)),
+                23 => Ok(TransportSegmentPayload::Telnet(tcp)),
+                25 => Ok(TransportSegmentPayload::Smtp(tcp)),
+                53 => Ok(TransportSegmentPayload::DnsTcp(tcp)),
+                80 => Ok(TransportSegmentPayload::Http(tcp)),
+                110 => Ok(TransportSegmentPayload::Pop3(tcp)),
+                143 => Ok(TransportSegmentPayload::Imap(tcp)),
+                443 => Ok(TransportSegmentPayload::Https(tcp)),
+                993 => Ok(TransportSegmentPayload::Imaps(tcp)),
+                995 => Ok(TransportSegmentPayload::Pop3s(tcp)),
                 _ => Err("Not supported".to_string()),
             }
         }
