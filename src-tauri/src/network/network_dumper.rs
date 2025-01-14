@@ -11,11 +11,9 @@ extern crate pnet;
 
 use pnet::datalink::Channel::Ethernet;
 use pnet::datalink::{self, NetworkInterface};
-use std::net::IpAddr;
 use std::thread;
 use std::time::Duration;
-use tauri::{Emitter, State};
-use chrono::{DateTime, Utc};
+use tauri::State;
 use crate::AppState;
 use crate::network::layers;
 
