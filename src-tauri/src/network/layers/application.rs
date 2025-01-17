@@ -9,7 +9,8 @@ pub fn process(
     interface: &NetworkInterface,
     app_handle: &AppHandle,
     db: &Surreal<Db>,
-    counter: &Counter
+    counter: &Counter,
+    parent_counter: &String
 ) -> Result<(), String> {
     Ok(())
 }

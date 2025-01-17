@@ -13,7 +13,8 @@ pub fn parse<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
-    counter: &'a Counter
+    counter: &'a Counter,
+    parent_counter: &'a String
 ) -> Result<EthernetPacket<'a>, String> {
 
     let ethernet_frame = EthernetPacket::new(packet);
@@ -22,8 +23,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
+                "[{}]: {} {} {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
                 &interface.name[..],
+                parent_counter,
                 counter.next(),
                 Utc::now().timestamp_millis(),
                 ethernet.get_source(),

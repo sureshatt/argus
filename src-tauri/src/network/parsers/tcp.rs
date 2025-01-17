@@ -13,6 +13,7 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
     counter: &'a Counter,
+    parent_counter: &'a String
 ) -> Result<TcpPacket<'a>, String> {
 
     let tcp = TcpPacket::new(packet.get_payload());
@@ -21,8 +22,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} TCP Packet: {}:{} > {}:{}; length: {}",
+                "[{}]: {} {} {} TCP Packet: {}:{} > {}:{}; length: {}",
                 &interface.name[..],
+                parent_counter,
                 counter.next(),
                 Utc::now().timestamp_millis(),
                 packet.get_source_ip(),

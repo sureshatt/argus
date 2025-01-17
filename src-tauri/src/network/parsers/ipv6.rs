@@ -13,15 +13,17 @@ pub fn parse<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
-    counter: &'a Counter
+    counter: &'a Counter,
+    parent_counter: &'a String
 ) -> Result<Ipv6Packet<'a>, String> {
     let ipv6_packet = Ipv6Packet::new(packet.payload());
     if let Some(ipv6_packet) = ipv6_packet {
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} IPv6 Packet: {} > {}; length: {}",
+                "[{}]: {} {} {} IPv6 Packet: {} > {}; length: {}",
                 &interface.name[..],
+                parent_counter,
                 counter.next(),
                 Utc::now().timestamp_millis(),
                 ipv6_packet.get_source(),

@@ -18,6 +18,7 @@ pub fn parse(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
     counter: &Counter,
+    parent_counter: &String
 ) -> Result<(), String> {
     let icmpv6_packet = Icmpv6Packet::new(ipv6_packet.payload());
     let source = ipv6_packet.get_source();
@@ -32,8 +33,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
@@ -50,8 +52,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
@@ -65,8 +68,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMPv6 packet {} -> {} (type={:?})",
+                        "[{}]: {} {} {} ICMPv6 packet {} -> {} (type={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,

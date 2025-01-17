@@ -14,14 +14,16 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
     counter: &Counter,
+    parent_counter: &String
 ) -> Result<Ipv4Packet<'a>, String> {
     let ipv4_packet = Ipv4Packet::new(packet.payload());
     if let Some(ipv4_packet) = ipv4_packet {
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} IPv4 Packet: {} > {}; length: {}",
+                "[{}]: {} {} {} IPv4 Packet: {} > {}; length: {}",
                 &interface.name[..],
+                parent_counter,
                 counter.next(),
                 Utc::now().timestamp_millis(),
                 ipv4_packet.get_source(),

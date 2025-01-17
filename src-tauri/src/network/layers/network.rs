@@ -63,11 +63,12 @@ pub fn process<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
-    counter: &'a Counter
+    counter: &'a Counter,
+    parent_counter: &'a String
 ) -> Result<NetworkPacketPayload, String> {
     match datalink_packet {
         DatalinkPacket::Ipv4(packet) => {
-            let ipv4_packet = ipv4::parse(packet, interface, app_handle, db, counter)?;
+            let ipv4_packet = ipv4::parse(packet, interface, app_handle, db, counter, parent_counter)?;
             let next_header = ipv4_packet.get_next_level_protocol();
             
             match next_header {
@@ -78,7 +79,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(IpPacket::from_ip_v4(ipv4_packet)))
                 }
                 IpNextHeaderProtocols::Icmp => {
-                    let _ = icmp::parse(&ipv4_packet, interface, app_handle, db, counter);
+                    let _ = icmp::parse(&ipv4_packet, interface, app_handle, db, counter, parent_counter);
                     Ok(NetworkPacketPayload::Icmp())
                 }
                 _ => Err("Not supported".to_string()),
@@ -86,7 +87,7 @@ pub fn process<'a>(
         }
 
         DatalinkPacket::Ipv6(payload) => {
-            let ipv6_packet = ipv6::parse(payload, interface, app_handle, db, counter)?;
+            let ipv6_packet = ipv6::parse(payload, interface, app_handle, db, counter, parent_counter)?;
             let next_header = ipv6_packet.get_next_header();
 
             match next_header {
@@ -97,7 +98,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(IpPacket::from_ip_v6(ipv6_packet)))
                 }
                 IpNextHeaderProtocols::Icmpv6 => {
-                    let _ = icmpv6::parse(&ipv6_packet, interface, app_handle, db, counter);
+                    let _ = icmpv6::parse(&ipv6_packet, interface, app_handle, db, counter, parent_counter);
                     Ok(NetworkPacketPayload::Icmpv6())
                 }
                 _ => Err("Not supported".to_string()),

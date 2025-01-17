@@ -12,7 +12,8 @@ pub fn parse<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
-    counter: &'a Counter
+    counter: &'a Counter,
+    parent_counter: &'a String
 ) -> Result<UdpPacket<'a>, String> {
     
     let udp = UdpPacket::new(packet.get_payload());
@@ -21,8 +22,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} UDP Packet: {}:{} > {}:{}; length: {}",
+                "[{}]: {} {} {} UDP Packet: {}:{} > {}:{}; length: {}",
                 &interface.name[..],
+                parent_counter,
                 counter.next(),
                 Utc::now().timestamp_millis(),
                 packet.get_source_ip(),

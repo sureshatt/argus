@@ -18,6 +18,7 @@ pub fn parse(
     app_handle: &AppHandle,
     db: &Surreal<Db>,
     counter: &Counter,
+    parent_counter: &String
 ) -> Result<(), String> {
     let icmp_packet = IcmpPacket::new(ipv4_packet.payload());
     let source = ipv4_packet.get_source();
@@ -32,8 +33,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMP echo reply {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} {} ICMP echo reply {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
@@ -50,8 +52,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMP echo request {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} {} ICMP echo request {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
@@ -65,8 +68,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} {} ICMP packet {} -> {} (type={:?})",
+                        "[{}]: {} {} {} ICMP packet {} -> {} (type={:?})",
                         &interface.name[..],
+                        parent_counter,
                         counter.next(),
                         Utc::now().timestamp_millis(),
                         source,

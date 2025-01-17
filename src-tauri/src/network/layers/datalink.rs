@@ -19,15 +19,16 @@ pub fn process<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
-    counter: &'a Counter
+    counter: &'a Counter,
+    parent_counter: &'a String,
 ) -> Result<DatalinkPacket<'a>, String> {
-    let frame = ethernet::parse(packet, interface, app_handle, db, counter)?;
+    let frame = ethernet::parse(packet, interface, app_handle, db, counter, parent_counter)?;
 
     match frame.get_ethertype() {
         EtherTypes::Ipv4 => Ok(DatalinkPacket::Ipv4(frame)),
         EtherTypes::Ipv6 => Ok(DatalinkPacket::Ipv6(frame)),
         EtherTypes::Arp => {
-            let _ = arp::handle(frame.payload(), interface, app_handle, db, counter);
+            let _ = arp::handle(frame.payload(), interface, app_handle, db, counter, parent_counter);
             Ok(DatalinkPacket::Arp())
         }
         _ => Err(format!("Unsupported Ethertype:{:?}", frame.get_ethertype())),

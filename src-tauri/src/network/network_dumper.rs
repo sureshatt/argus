@@ -54,7 +54,8 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         match rx.next() {
             Ok(packet) => {
 
-                let _ = layers::process_packet(packet, &interface, &app_handle, &db, &counter);
+                let parent_counter = counter.next();
+                let _ = layers::process_packet(packet, &interface, &app_handle, &db, &counter, &parent_counter);
                 thread::sleep(Duration::from_secs(2));
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),

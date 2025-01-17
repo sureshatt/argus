@@ -10,7 +10,8 @@ pub fn handle(
     interface: &NetworkInterface,
     app_handle: &AppHandle,
     db: &Surreal<Db>,
-    conter: &Counter
+    conter: &Counter,
+    parent_counter: &String
 ) -> Result<(), String> {
     let arp_frame = ArpPacket::new(packet);
 
