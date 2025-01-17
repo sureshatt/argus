@@ -1,6 +1,7 @@
 use pnet::{datalink::NetworkInterface, packet::arp::ArpPacket};
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
+use chrono::Utc;
 
 pub fn handle(
     packet: &[u8],
@@ -14,8 +15,9 @@ pub fn handle(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: ARP packet: {}({}) > {}({}); operation: {:?}",
+                "[{}]: {} ARP packet: {}({}) > {}({}); operation: {:?}",
                 interface,
+                Utc::now().timestamp_millis(),
                 arp.get_sender_hw_addr(),
                 arp.get_sender_proto_addr(),
                 arp.get_target_hw_addr(),

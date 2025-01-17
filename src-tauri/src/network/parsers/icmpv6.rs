@@ -8,6 +8,7 @@ use pnet::{
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
+use chrono::Utc;
 
 pub fn parse(
     ipv6_packet: &Ipv6Packet,
@@ -28,8 +29,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         echo_reply_packet.get_sequence_number(),
@@ -44,8 +46,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         echo_request_packet.get_sequence_number(),
@@ -57,8 +60,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMPv6 packet {} -> {} (type={:?})",
+                        "[{}]: {} ICMPv6 packet {} -> {} (type={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         icmpv6_packet.get_icmpv6_type()

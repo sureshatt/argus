@@ -4,8 +4,8 @@ use pnet::{
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
-
 use crate::network::layers::network::IpPacket;
+use chrono::Utc;
 
 pub fn parse<'a>(
     packet: &'a IpPacket,
@@ -20,8 +20,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: TCP Packet: {}:{} > {}:{}; length: {}",
+                "[{}]: {} TCP Packet: {}:{} > {}:{}; length: {}",
                 &interface.name[..],
+                Utc::now().timestamp_millis(),
                 packet.get_source_ip(),
                 tcp.get_source(),
                 packet.get_destination_ip(),

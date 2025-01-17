@@ -4,6 +4,7 @@ use pnet::{
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
+use chrono::Utc;
 
 pub fn parse<'a>(
     packet: &'a [u8],
@@ -18,8 +19,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: Ethernet frame: {} > {}; ethertype: {:?} length: {}",
+                "[{}]: {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
                 &interface.name[..],
+                Utc::now().timestamp_millis(),
                 ethernet.get_source(),
                 ethernet.get_destination(),
                 ethernet.get_ethertype(),

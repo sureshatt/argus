@@ -8,6 +8,7 @@ use pnet::{
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
+use chrono::Utc;
 
 pub fn parse(
     ipv4_packet: &Ipv4Packet,
@@ -28,8 +29,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMP echo reply {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} ICMP echo reply {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         echo_reply_packet.get_sequence_number(),
@@ -44,8 +46,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMP echo request {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} ICMP echo request {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         echo_request_packet.get_sequence_number(),
@@ -57,8 +60,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: ICMP packet {} -> {} (type={:?})",
+                        "[{}]: {} ICMP packet {} -> {} (type={:?})",
                         &interface.name[..],
+                        Utc::now().timestamp_millis(),
                         source,
                         destination,
                         icmp_packet.get_icmp_type()
