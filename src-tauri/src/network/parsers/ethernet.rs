@@ -11,9 +11,6 @@ pub fn parse<'a>(
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<EthernetPacket<'a>, String> {
-    if packet.len() < 14 {
-        return Err("Packet too short".to_string());
-    }
 
     let ethernet_frame = EthernetPacket::new(packet);
 

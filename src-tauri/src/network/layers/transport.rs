@@ -31,14 +31,14 @@ pub enum TransportSegmentPayload<'a> {
 }
 
 pub fn process<'a>(
-    packet: &'a NetworkPacketPayload<'a>,
+    packet: &'a NetworkPacketPayload,
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
 ) -> Result<TransportSegmentPayload<'a>, String> {
     match packet {
-        NetworkPacketPayload::Udp(nested) => {
-            let udp = udp::parse(nested, interface, app_handle, db)?;
+        NetworkPacketPayload::Udp(ip_packet) => {
+            let udp = udp::parse(ip_packet, interface, app_handle, db)?;
             match udp.get_destination() {
                 53 => Ok(TransportSegmentPayload::Dns(udp)),
                 67 | 68 => Ok(TransportSegmentPayload::Dhcp(udp)),
@@ -51,8 +51,8 @@ pub fn process<'a>(
             }
         }
 
-        NetworkPacketPayload::Tcp(paylod) => {
-            let tcp = tcp::parse(paylod, interface, app_handle, db)?;
+        NetworkPacketPayload::Tcp(ip_packet) => {
+            let tcp = tcp::parse(&ip_packet, interface, app_handle, db)?;
             match tcp.get_destination() {
                 20 | 21 => Ok(TransportSegmentPayload::Ftp(tcp)),
                 22 => Ok(TransportSegmentPayload::Ssh(tcp)),
