@@ -19,8 +19,9 @@ pub fn handle(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} {} ARP packet: {}({}) > {}({}); operation: {:?}",
+                "[{}]: {} {} {} ARP packet: {}({}) > {}({}); operation: {:?}",
                 interface,
+                parent_counter,
                 conter.next(),
                 Utc::now().timestamp_millis(),
                 arp.get_sender_hw_addr(),

@@ -1,5 +1,5 @@
 use pnet::datalink::NetworkInterface;
-use pnet::packet::ip::IpNextHeaderProtocols::{self, Udp};
+use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::Packet;
