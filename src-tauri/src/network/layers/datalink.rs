@@ -1,4 +1,4 @@
-use crate::network::parsers::{arp, ethernet};
+use crate::{network::parsers::{arp, ethernet}, Counter};
 use pnet::{
     datalink::NetworkInterface,
     packet::{
@@ -19,14 +19,15 @@ pub fn process<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
+    counter: &'a Counter
 ) -> Result<DatalinkPacket<'a>, String> {
-    let frame = ethernet::parse(packet, interface, app_handle, db)?;
+    let frame = ethernet::parse(packet, interface, app_handle, db, counter)?;
 
     match frame.get_ethertype() {
         EtherTypes::Ipv4 => Ok(DatalinkPacket::Ipv4(frame)),
         EtherTypes::Ipv6 => Ok(DatalinkPacket::Ipv6(frame)),
         EtherTypes::Arp => {
-            let _ = arp::handle(frame.payload(), interface, app_handle, db);
+            let _ = arp::handle(frame.payload(), interface, app_handle, db, counter);
             Ok(DatalinkPacket::Arp())
         }
         _ => Err(format!("Unsupported Ethertype:{:?}", frame.get_ethertype())),

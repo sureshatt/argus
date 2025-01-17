@@ -6,11 +6,14 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
+use crate::Counter;
+
 pub fn parse<'a>(
     packet: &'a [u8],
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
+    counter: &'a Counter
 ) -> Result<EthernetPacket<'a>, String> {
 
     let ethernet_frame = EthernetPacket::new(packet);
@@ -19,8 +22,9 @@ pub fn parse<'a>(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
+                "[{}]: {} {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
                 &interface.name[..],
+                counter.next(),
                 Utc::now().timestamp_millis(),
                 ethernet.get_source(),
                 ethernet.get_destination(),

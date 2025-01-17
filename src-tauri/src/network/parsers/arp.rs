@@ -3,11 +3,14 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
+use crate::Counter;
+
 pub fn handle(
     packet: &[u8],
     interface: &NetworkInterface,
     app_handle: &AppHandle,
     db: &Surreal<Db>,
+    conter: &Counter
 ) -> Result<(), String> {
     let arp_frame = ArpPacket::new(packet);
 
@@ -15,8 +18,9 @@ pub fn handle(
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} ARP packet: {}({}) > {}({}); operation: {:?}",
+                "[{}]: {} {} ARP packet: {}({}) > {}({}); operation: {:?}",
                 interface,
+                conter.next(),
                 Utc::now().timestamp_millis(),
                 arp.get_sender_hw_addr(),
                 arp.get_sender_proto_addr(),

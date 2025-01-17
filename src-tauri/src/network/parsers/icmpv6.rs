@@ -10,11 +10,14 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
+use crate::Counter;
+
 pub fn parse(
     ipv6_packet: &Ipv6Packet,
     interface: &NetworkInterface,
     app_handle: &AppHandle,
     db: &Surreal<Db>,
+    counter: &Counter,
 ) -> Result<(), String> {
     let icmpv6_packet = Icmpv6Packet::new(ipv6_packet.payload());
     let source = ipv6_packet.get_source();
@@ -29,8 +32,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
                         destination,
@@ -46,8 +50,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
+                        "[{}]: {} {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
                         &interface.name[..],
+                        counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
                         destination,
@@ -60,8 +65,9 @@ pub fn parse(
                 let _ = app_handle.emit(
                     "update",
                     format!(
-                        "[{}]: {} ICMPv6 packet {} -> {} (type={:?})",
+                        "[{}]: {} {} ICMPv6 packet {} -> {} (type={:?})",
                         &interface.name[..],
+                        counter.next(),
                         Utc::now().timestamp_millis(),
                         source,
                         destination,

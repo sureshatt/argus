@@ -5,11 +5,13 @@ use serde::Serialize;
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::State;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
 struct AppState {
     selected: Arc<RwLock<String>>,
     db: Arc<RwLock<Surreal<Db>>>,
+    counter: Arc<RwLock<Counter>>
 }
 
 #[tauri::command]
@@ -32,16 +34,34 @@ pub struct NetLogEvent {
     log: String,
 }
 
+struct Counter {
+    value: AtomicUsize,
+}
+
+impl Counter {
+    fn new() -> Self {
+        Self {
+            value: AtomicUsize::new(0),
+        }
+    }
+
+    fn next(&self) -> String {
+        let number = self.value.fetch_add(1, Ordering::Relaxed);
+        format!("{:06}", number)
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
 
     let db = Surreal::new::<Mem>(()).await.unwrap();
     db.use_ns("namespace").use_db("database").await.unwrap();
+    let sq_counter = Counter::new();
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
-        db: Arc::new(RwLock::new(db))
+        db: Arc::new(RwLock::new(db)),
+        counter: Arc::new(RwLock::new(sq_counter))
     };
 
     tauri::Builder::default()

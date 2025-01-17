@@ -14,7 +14,7 @@ use pnet::datalink::{self, NetworkInterface};
 use std::thread;
 use std::time::Duration;
 use tauri::State;
-use crate::AppState;
+use crate::{AppState, Counter};
 use crate::network::layers;
 
 #[tauri::command]
@@ -30,6 +30,7 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
 
         let selected_clone = state.selected.clone();
         let db_clone = state.db.clone();
+        let sequence_generator = state.counter.clone();
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -48,11 +49,12 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         }
 
         let db = db_clone.read().unwrap().clone();
+        let counter = sequence_generator.read().unwrap();
 
         match rx.next() {
             Ok(packet) => {
 
-                let _ = layers::process_packet(packet, &interface, &app_handle, &db);
+                let _ = layers::process_packet(packet, &interface, &app_handle, &db, &counter);
                 thread::sleep(Duration::from_secs(2));
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),

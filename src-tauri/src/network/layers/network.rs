@@ -9,6 +9,7 @@ use tauri::AppHandle;
 
 use crate::network::layers::datalink::DatalinkPacket;
 use crate::network::parsers::{icmp, icmpv6, ipv4, ipv6};
+use crate::Counter;
 
 // define a struct to provide consistant interface to the transport layer for ipv4 & ipv6
 // Owns data instead of borrowing to prevent lifetime complexity. 
@@ -62,10 +63,11 @@ pub fn process<'a>(
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
+    counter: &'a Counter
 ) -> Result<NetworkPacketPayload, String> {
     match datalink_packet {
         DatalinkPacket::Ipv4(packet) => {
-            let ipv4_packet = ipv4::parse(packet, interface, app_handle, db)?;
+            let ipv4_packet = ipv4::parse(packet, interface, app_handle, db, counter)?;
             let next_header = ipv4_packet.get_next_level_protocol();
             
             match next_header {
@@ -76,7 +78,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(IpPacket::from_ip_v4(ipv4_packet)))
                 }
                 IpNextHeaderProtocols::Icmp => {
-                    let _ = icmp::parse(&ipv4_packet, interface, app_handle, db);
+                    let _ = icmp::parse(&ipv4_packet, interface, app_handle, db, counter);
                     Ok(NetworkPacketPayload::Icmp())
                 }
                 _ => Err("Not supported".to_string()),
@@ -84,7 +86,7 @@ pub fn process<'a>(
         }
 
         DatalinkPacket::Ipv6(payload) => {
-            let ipv6_packet = ipv6::parse(payload, interface, app_handle, db)?;
+            let ipv6_packet = ipv6::parse(payload, interface, app_handle, db, counter)?;
             let next_header = ipv6_packet.get_next_header();
 
             match next_header {
@@ -95,7 +97,7 @@ pub fn process<'a>(
                     Ok(NetworkPacketPayload::Tcp(IpPacket::from_ip_v6(ipv6_packet)))
                 }
                 IpNextHeaderProtocols::Icmpv6 => {
-                    let _ = icmpv6::parse(&ipv6_packet, interface, app_handle, db);
+                    let _ = icmpv6::parse(&ipv6_packet, interface, app_handle, db, counter);
                     Ok(NetworkPacketPayload::Icmpv6())
                 }
                 _ => Err("Not supported".to_string()),

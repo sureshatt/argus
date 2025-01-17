@@ -6,19 +6,23 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
+use crate::Counter;
+
 pub fn parse<'a>(
     packet: &'a EthernetPacket<'a>,
     interface: &'a NetworkInterface,
     app_handle: &'a AppHandle,
     db: &'a Surreal<Db>,
+    counter: &Counter,
 ) -> Result<Ipv4Packet<'a>, String> {
     let ipv4_packet = Ipv4Packet::new(packet.payload());
     if let Some(ipv4_packet) = ipv4_packet {
         let _ = app_handle.emit(
             "update",
             format!(
-                "[{}]: {} IPv4 Packet: {} > {}; length: {}",
+                "[{}]: {} {} IPv4 Packet: {} > {}; length: {}",
                 &interface.name[..],
+                counter.next(),
                 Utc::now().timestamp_millis(),
                 ipv4_packet.get_source(),
                 ipv4_packet.get_destination(),
