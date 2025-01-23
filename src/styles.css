@@ -3,6 +3,39 @@ body {
   font-family: Arial, sans-serif;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+th {
+  background-color: #f4f4f4;
+  resize: horizontal;
+  overflow: auto;
+}
+
+tbody td {
+  font-size: 13px;
+}
+
+input {
+  width: 90%;
+  padding: 5px;
+  margin: 5px 0;
+  box-sizing: border-box;
+}
+
 .container {
   display: flex;
   height: 100vh;
@@ -46,7 +79,8 @@ body {
   text-align: left;
 }
 
-.interfaces-table th, .interfaces-table td {
+.interfaces-table th,
+.interfaces-table td {
   border: 1px solid #ccc;
   padding: 8px;
 }

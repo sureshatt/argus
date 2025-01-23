@@ -30,8 +30,16 @@ fn get_network_interfaces() -> Vec<NetIface> {
 }
 
 #[derive(Clone, Serialize)]
-pub struct NetLogEvent {
-    log: String,
+pub struct NetworkLog {
+    id: String,
+    parent: String,
+    timestamp: String,
+    protocol: String,
+    source: String,
+    destination: String,
+    length: String,
+    info: String,
+    interface: String,
 }
 
 struct Counter {

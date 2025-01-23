@@ -14,11 +14,48 @@ type NetIface = {
   is_p2p: boolean
 }
 
+type NetworkLog = {
+  id: string,
+  parent: string,
+  timestamp: string,
+  protocol: string,
+  source: string,
+  destination: string,
+  length: string,
+  info: string,
+  interface: string,
+}
+
 function handleRowSelectChange(event: Event) {
   const target = event.target as HTMLInputElement;
   invoke("set_selection", { selection: target.value });
   invoke("dump", { selection: target.value });
 }
+
+function filterColumn(columnIndex: number): void {
+  const input = document.querySelectorAll('thead input')[columnIndex] as HTMLInputElement;
+  if (!input) return;
+
+  const filter = input.value.toUpperCase();
+  const table = document.getElementById('filterTable') as HTMLTableElement;
+  if (!table) return;
+
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+
+  const rows = tbody.getElementsByTagName('tr');
+
+  for (let i = 0; i < rows.length; i++) {
+      const cell = rows[i].getElementsByTagName('td')[columnIndex];
+      if (cell) {
+          const textValue = cell.textContent || cell.innerText;
+          rows[i].style.display = textValue.toUpperCase().indexOf(filter) > -1 ? '' : 'none';
+      }
+  }
+}
+
+(window as any).filterColumn = filterColumn;
+
 
 async function fetchNetworkInterfaces() {
   try {
@@ -31,6 +68,7 @@ async function fetchNetworkInterfaces() {
 
     tbody.innerHTML = ''; // Clear previous rows
 
+    // handling network interfaces table
     const interfaces: NetIface[] = await invoke('get_network_interfaces');
     console.log('Network Interfaces:', interfaces);
 
@@ -54,15 +92,25 @@ async function fetchNetworkInterfaces() {
 fetchNetworkInterfaces();
 
 
-listen<string>("update", (event) => {
-  console.log(`got NetLogEvent ${event.payload}`);
+listen<NetworkLog>("update", (event) => {
 
-  const messagesDiv = document.getElementById("messages");
-  if (messagesDiv) {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message');
-    messageDiv.textContent = event.payload;
+  const netlog: NetworkLog = event.payload;
+  console.log("got NetLogEvent",netlog);
+``
+  const filterTable = document.getElementById("filterTableBody");
+  if (filterTable) {
+    const trElement = document.createElement('tr');
+    trElement.innerHTML = `
+      <td>${netlog.id}</td>
+      <td>${netlog.timestamp}</td>
+      <td>${netlog.protocol}</td>
+      <td>${netlog.source}</td>
+      <td>${netlog.destination}</td>
+      <td>${netlog.length}</td>
+      <td>${netlog.info}</td>
+      
+    `;
 
-    messagesDiv?.prepend(messageDiv);
+    filterTable?.prepend(trElement);
   }
 });

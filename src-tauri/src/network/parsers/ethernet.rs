@@ -6,7 +6,8 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
-use crate::Counter;
+use crate::{Counter, NetworkLog};
+
 
 pub fn parse<'a>(
     packet: &'a [u8],
@@ -20,20 +21,24 @@ pub fn parse<'a>(
     let ethernet_frame = EthernetPacket::new(packet);
 
     if let Some(ethernet) = ethernet_frame {
+
+        let netlog = NetworkLog {
+            id: counter.next(),
+            parent: parent_counter.to_string(),
+            timestamp:  Utc::now().timestamp_millis().to_string(),
+            protocol: "Ethernet".to_string(),
+            source: ethernet.get_source().to_string(),
+            destination: ethernet.get_destination().to_string(),
+            length: ethernet.packet().len().to_string(),
+            info: "".to_string(),
+            interface: (&interface.name[..]).to_string()
+        };
+
         let _ = app_handle.emit(
             "update",
-            format!(
-                "[{}]: {} {} {} Ethernet frame: {} > {}; ethertype: {:?} length: {}",
-                &interface.name[..],
-                parent_counter,
-                counter.next(),
-                Utc::now().timestamp_millis(),
-                ethernet.get_source(),
-                ethernet.get_destination(),
-                ethernet.get_ethertype(),
-                ethernet.packet().len()
-            ),
+            netlog,
         );
+
         Ok(ethernet)
     } else {
         return Err("Malformed ARP Packet".to_string());

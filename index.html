@@ -32,8 +32,24 @@
         <!-- More rows can be added dynamically -->
       </div>
       <div class="right-section" id="right-section">
-        <!-- Content dynamically generated here -->
-         <div id="messages"> </div>
+        <table id="filterTable">
+          <thead  id="filterTableHead">
+              <tr>
+                  <!--th>Interface<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
+                  <th>Parent Id<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th-->
+                  <th>Id<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
+                  <th>Timestamp<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th>
+                  <th>Protocol<br><input type="text" onkeyup="filterColumn(2)" placeholder="Filter ..."></th>
+                  <th>Source<br><input type="text" onkeyup="filterColumn(3)" placeholder="Filter ..."></th>
+                  <th>Destination<br><input type="text" onkeyup="filterColumn(4)" placeholder="Filter ..."></th>
+                  <th>Length<br><input type="text" onkeyup="filterColumn(5)" placeholder="Filter ..."></th>
+                  <th>Info<br><input type="text" onkeyup="filterColumn(6)" placeholder="Filter ..."></th>
+              </tr>
+          </thead>
+          <tbody id="filterTableBody">
+              <!-- Rows will be dynamically generated -->
+          </tbody>
+      </table>
       </div>
     </div>
   

@@ -4,7 +4,7 @@ use pnet::{
 };
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
-use crate::{network::layers::network::IpPacket, Counter};
+use crate::{network::layers::network::IpPacket, Counter, NetworkLog};
 use chrono::Utc;
 
 pub fn parse<'a>(
@@ -19,20 +19,22 @@ pub fn parse<'a>(
     let tcp = TcpPacket::new(packet.get_payload());
 
     if let Some(tcp) = tcp {
+        
+        let netlog = NetworkLog {
+            id: counter.next(),
+            parent: parent_counter.to_string(),
+            timestamp:  Utc::now().timestamp_millis().to_string(),
+            protocol: "TCP".to_string(),
+            source: format!("{}:{}", packet.get_source_ip(), tcp.get_source()),
+            destination: format!("{}:{}", packet.get_destination_ip(), tcp.get_destination()),
+            length: tcp.packet().len().to_string(),
+            info: "".to_string(),
+            interface: (&interface.name[..]).to_string()
+        };
+
         let _ = app_handle.emit(
             "update",
-            format!(
-                "[{}]: {} {} {} TCP Packet: {}:{} > {}:{}; length: {}",
-                &interface.name[..],
-                parent_counter,
-                counter.next(),
-                Utc::now().timestamp_millis(),
-                packet.get_source_ip(),
-                tcp.get_source(),
-                packet.get_destination_ip(),
-                tcp.get_destination(),
-                tcp.packet().len()
-            ),
+            netlog,
         );
 
         Ok(tcp)

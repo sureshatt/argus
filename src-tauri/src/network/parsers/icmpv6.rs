@@ -10,7 +10,7 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::{AppHandle, Emitter};
 use chrono::Utc;
 
-use crate::Counter;
+use crate::{Counter, NetworkLog};
 
 pub fn parse(
     ipv6_packet: &Ipv6Packet,
@@ -27,56 +27,59 @@ pub fn parse(
     if let Some(icmpv6_packet) = icmpv6_packet {
         match icmpv6_packet.get_icmpv6_type() {
             Icmpv6Types::EchoReply => {
-                let echo_reply_packet =
-                    echo_reply::EchoReplyPacket::new(ipv6_packet.payload()).unwrap();
 
+                let netlog = NetworkLog {
+                    id: counter.next(),
+                    parent: parent_counter.to_string(),
+                    timestamp:  Utc::now().timestamp_millis().to_string(),
+                    protocol: "ICMPv6".to_string(),
+                    source: source.to_string(),
+                    destination: destination.to_string(),
+                    length: icmpv6_packet.packet().len().to_string(),
+                    info: "ICMP Echo Reply".to_string(),
+                    interface: (&interface.name[..]).to_string()
+                };
+        
                 let _ = app_handle.emit(
                     "update",
-                    format!(
-                        "[{}]: {} {} {} ICMPv6 echo reply {} -> {} (seq={:?}, id={:?})",
-                        &interface.name[..],
-                        parent_counter,
-                        counter.next(),
-                        Utc::now().timestamp_millis(),
-                        source,
-                        destination,
-                        echo_reply_packet.get_sequence_number(),
-                        echo_reply_packet.get_identifier()
-                    ),
+                    netlog,
                 );
             }
             Icmpv6Types::EchoRequest => {
-                let echo_request_packet =
-                    echo_request::EchoRequestPacket::new(ipv6_packet.payload()).unwrap();
 
+                let netlog = NetworkLog {
+                    id: counter.next(),
+                    parent: parent_counter.to_string(),
+                    timestamp:  Utc::now().timestamp_millis().to_string(),
+                    protocol: "Ethernet".to_string(),
+                    source: source.to_string(),
+                    destination: destination.to_string(),
+                    length: icmpv6_packet.packet().len().to_string(),
+                    info: "ICMP Echo Request".to_string(),
+                    interface: (&interface.name[..]).to_string()
+                };
+        
                 let _ = app_handle.emit(
                     "update",
-                    format!(
-                        "[{}]: {} {} {} ICMPv6 echo request {} -> {} (seq={:?}, id={:?})",
-                        &interface.name[..],
-                        parent_counter,
-                        counter.next(),
-                        Utc::now().timestamp_millis(),
-                        source,
-                        destination,
-                        echo_request_packet.get_sequence_number(),
-                        echo_request_packet.get_identifier()
-                    ),
+                    netlog,
                 );
             }
             _ => {
+                let netlog = NetworkLog {
+                    id: counter.next(),
+                    parent: parent_counter.to_string(),
+                    timestamp:  Utc::now().timestamp_millis().to_string(),
+                    protocol: "ICMP".to_string(),
+                    source: source.to_string(),
+                    destination: destination.to_string(),
+                    length: icmpv6_packet.packet().len().to_string(),
+                    info: "ICMP".to_string(),
+                    interface: (&interface.name[..]).to_string()
+                };
+        
                 let _ = app_handle.emit(
                     "update",
-                    format!(
-                        "[{}]: {} {} {} ICMPv6 packet {} -> {} (type={:?})",
-                        &interface.name[..],
-                        parent_counter,
-                        counter.next(),
-                        Utc::now().timestamp_millis(),
-                        source,
-                        destination,
-                        icmpv6_packet.get_icmpv6_type()
-                    ),
+                    netlog,
                 );
             }
         }
