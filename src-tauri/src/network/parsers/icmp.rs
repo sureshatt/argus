@@ -1,24 +1,16 @@
-use pnet::{
-    datalink::NetworkInterface,
-    packet::{
+use pnet::packet::{
         icmp::{IcmpPacket, IcmpTypes},
         ipv4::Ipv4Packet,
         Packet,
-    },
-};
-use surrealdb::{engine::local::Db, Surreal};
-use tauri::{AppHandle, Emitter};
+    };
 use chrono::Utc;
+use tauri::Emitter;
 
-use crate::{Counter, NetworkLog};
+use crate::{network::network_dumper::Context, NetworkLog};
 
 pub fn parse(
     ipv4_packet: &Ipv4Packet,
-    interface: &NetworkInterface,
-    app_handle: &AppHandle,
-    db: &Surreal<Db>,
-    counter: &Counter,
-    parent_counter: &String
+    context: &Context,
 ) -> Result<(), String> {
 
     let icmp_packet = IcmpPacket::new(ipv4_packet.payload());
@@ -30,18 +22,18 @@ pub fn parse(
             IcmpTypes::EchoReply => {
 
                 let netlog = NetworkLog {
-                    id: counter.next(),
-                    parent: parent_counter.to_string(),
+                    id: context.counter.next(),
+                    parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "ICMP".to_string(),
                     source: source.to_string(),
                     destination: destination.to_string(),
                     length: icmp_packet.packet().len().to_string(),
                     info: "ICMP Echo Reply".to_string(),
-                    interface: (&interface.name[..]).to_string()
+                    interface: (context.interface.name[..]).to_string()
                 };
         
-                let _ = app_handle.emit(
+                let _ = context.app_handle.emit(
                     "update",
                     netlog,
                 );
@@ -50,18 +42,18 @@ pub fn parse(
             IcmpTypes::EchoRequest => {
 
                 let netlog = NetworkLog {
-                    id: counter.next(),
-                    parent: parent_counter.to_string(),
+                    id: context.counter.next(),
+                    parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "Ethernet".to_string(),
                     source: source.to_string(),
                     destination: destination.to_string(),
                     length: icmp_packet.packet().len().to_string(),
                     info: "ICMP Echo Request".to_string(),
-                    interface: (&interface.name[..]).to_string()
+                    interface: (context.interface.name[..]).to_string()
                 };
         
-                let _ = app_handle.emit(
+                let _ = context.app_handle.emit(
                     "update",
                     netlog,
                 );
@@ -69,25 +61,25 @@ pub fn parse(
             }
             _ => {
                 let netlog = NetworkLog {
-                    id: counter.next(),
-                    parent: parent_counter.to_string(),
+                    id: context.counter.next(),
+                    parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "ICMP".to_string(),
                     source: source.to_string(),
                     destination: destination.to_string(),
                     length: icmp_packet.packet().len().to_string(),
                     info: "ICMP".to_string(),
-                    interface: (&interface.name[..]).to_string()
+                    interface: (context.interface.name[..]).to_string()
                 };
         
-                let _ = app_handle.emit(
+                let _ = context.app_handle.emit(
                     "update",
                     netlog,
                 );
             }
         }
     } else {
-        println!("[{}]: Malformed ICMPv6 Packet", &interface.name[..]);
+        println!("[{}]: Malformed ICMPv6 Packet", context.interface.name.to_string());
     }
     Ok(())
 }

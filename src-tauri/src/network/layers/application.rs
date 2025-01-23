@@ -1,16 +1,8 @@
-use pnet::{datalink::NetworkInterface, packet::{dns::Dns, Packet}};
-use surrealdb::{engine::local::Db, Surreal};
-use tauri::{AppHandle, Emitter};
-
-use crate::{network::layers::transport::TransportSegmentPayload, Counter};
+use crate::network::{layers::transport::TransportSegmentPayload, network_dumper::Context};
 
 pub fn process(
     segment: &TransportSegmentPayload,
-    interface: &NetworkInterface,
-    app_handle: &AppHandle,
-    db: &Surreal<Db>,
-    counter: &Counter,
-    parent_counter: &String
+    context: &Context,
 ) -> Result<(), String> {
     Ok(())
 }

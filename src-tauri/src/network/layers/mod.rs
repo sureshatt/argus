@@ -1,9 +1,4 @@
-use pnet::datalink::NetworkInterface;
-use surrealdb::{engine::local::Db, Surreal};
-use tauri::AppHandle;
-
-use crate::Counter;
-
+use super::network_dumper::Context;
 pub mod application;
 pub mod datalink;
 pub mod network;
@@ -11,21 +6,17 @@ pub mod transport;
 
 pub fn process_packet(
     packet: &[u8],
-    interface: &NetworkInterface,
-    app_handle: &AppHandle,
-    db: &Surreal<Db>,
-    counter: &Counter,
-    parent_counter: &String
+    context: &Context,
 ) -> Result<(), String> {
 
-    let datalink_frame_payload = datalink::process(packet, interface, app_handle, db, counter, parent_counter)?;
+    let datalink_frame_payload = datalink::process(packet, context)?;
 
     // only the network layer processing copies & owns the packet data
     let network_packet_payload =
-        network::process(&datalink_frame_payload, interface, app_handle, db, counter, parent_counter)?;
+        network::process(&datalink_frame_payload, context)?;
 
     let transport_segment_payload =
-        transport::process(&network_packet_payload, interface, app_handle, db, counter, parent_counter)?;
+        transport::process(&network_packet_payload, context)?;
 
-    application::process(&transport_segment_payload, interface, app_handle, db, counter, parent_counter)
+    application::process(&transport_segment_payload, context)
 }

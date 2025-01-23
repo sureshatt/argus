@@ -11,11 +11,22 @@ extern crate pnet;
 
 use pnet::datalink::Channel::Ethernet;
 use pnet::datalink::{self, NetworkInterface};
+use surrealdb::engine::local::Db;
+use surrealdb::Surreal;
 use std::thread;
 use std::time::Duration;
-use tauri::State;
+use tauri::{State, AppHandle};
 use crate::{AppState, Counter};
 use crate::network::layers;
+
+pub struct Context<'a> {
+    pub interface: &'a NetworkInterface,
+    pub app_handle: &'a AppHandle,
+    pub db:  &'a Surreal<Db>,
+    pub counter: &'a Counter,
+    pub parent_counter: &'a String,
+    pub session_id: &'a String,
+}
 
 #[tauri::command]
 pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppState>) {
@@ -31,6 +42,7 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         let selected_clone = state.selected.clone();
         let db_clone = state.db.clone();
         let sequence_generator = state.counter.clone();
+        let session_id = sequence_generator.read().unwrap().next();
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -55,7 +67,16 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
             Ok(packet) => {
 
                 let parent_counter = counter.next();
-                let _ = layers::process_packet(packet, &interface, &app_handle, &db, &counter, &parent_counter);
+                let context = Context {
+                    interface: &interface,
+                    app_handle: &app_handle,
+                    db: &db,
+                    counter: &counter,
+                    parent_counter: &parent_counter,
+                    session_id: &session_id,
+                };
+
+                let _ = layers::process_packet(packet, &context);
                 thread::sleep(Duration::from_secs(2));
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
