@@ -32,6 +32,20 @@ function handleRowSelectChange(event: Event) {
   invoke("dump", { selection: target.value });
 }
 
+async function handlePacketRowSelect(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const packetId = target.id as string;
+  console.log('Packet row selected:', packetId);
+  
+  try {
+    const data: Array<any> = await invoke('get_packet_data', { packetId });
+    console.log('Packet data:', data);
+  } catch (error) {
+    console.error('Failed to fetch packet data:', error);
+  }
+}
+
+
 function filterColumn(columnIndex: number): void {
   const input = document.querySelectorAll('thead input')[columnIndex] as HTMLInputElement;
   if (!input) return;
@@ -110,6 +124,8 @@ listen<NetworkLog>("update", (event) => {
       <td>${netlog.info}</td>
       
     `;
+    trElement.id=netlog.id;
+    trElement.addEventListener("click", handlePacketRowSelect);
 
     filterTable?.prepend(trElement);
   }

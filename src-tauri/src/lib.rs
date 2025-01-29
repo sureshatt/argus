@@ -1,10 +1,10 @@
 mod network;
 use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
-use tauri::{Listener, State};
+use tauri::{Listener, State, AppHandle};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
@@ -12,6 +12,16 @@ struct AppState {
     selected: Arc<RwLock<String>>,
     db: Arc<RwLock<Surreal<Db>>>,
     counter: Arc<RwLock<Counter>>
+}
+
+#[tauri::command]
+async fn get_packet_data(state: State<'_, AppState>, packet_id: String) -> Result<Vec<serde_json::Value>, String> {
+    println!("Looking for packet : {}", packet_id);
+    let db = state.db.read().unwrap().clone();
+    match db.select("logs").await {
+        Ok(data) => Ok(data),
+        Err(e) => Err(format!("Failed to get packet data: {}", e)),
+    }
 }
 
 #[tauri::command]
@@ -29,13 +39,25 @@ fn get_network_interfaces() -> Vec<NetIface> {
         .collect()
 }
 
-async fn listen_to_event(app_handle: &tauri::AppHandle) {
-    app_handle.listen("update", |event| {
-        println!("Received event in Rust: {}", event.payload());
+fn listen_to_event(app_handle: &AppHandle, db: &Surreal<Db>) {
+    let db_clone = db.clone();
+    app_handle.listen("update", move |event| {
+        let db_clone = db_clone.clone(); // Clone the db reference to move it into the closure
+
+        tauri::async_runtime::spawn(async move {
+            match serde_json::from_str::<NetworkLog>(event.payload()) {
+                Ok(network_log) => {
+                    let _: Vec<serde_json::Value> = db_clone.create("logs").content(&network_log).await.unwrap();
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse NetworkLog: {}", e);
+                }
+            }
+        });
     });
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct NetworkLog {
     id: String,
     parent: String,
@@ -75,7 +97,7 @@ pub async fn run() {
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
-        db: Arc::new(RwLock::new(db)),
+        db: Arc::new(RwLock::new(db.clone())),
         counter: Arc::new(RwLock::new(sq_counter))
     };
 
@@ -85,13 +107,12 @@ pub async fn run() {
         .invoke_handler(tauri::generate_handler![
             get_network_interfaces,
             set_selection,
+            get_packet_data,
             network::network_dumper::dump
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                listen_to_event(&app_handle).await;
-            });
+            listen_to_event(&app_handle, &db);
             Ok(())
         })
         .run(tauri::generate_context!())
