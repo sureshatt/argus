@@ -4,7 +4,7 @@ use network::network_interface::{get_net_ifaces, NetIface};
 use serde::Serialize;
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
-use tauri::State;
+use tauri::{Listener, State};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
@@ -29,6 +29,12 @@ fn get_network_interfaces() -> Vec<NetIface> {
         .collect()
 }
 
+async fn listen_to_event(app_handle: &tauri::AppHandle) {
+    app_handle.listen("update", |event| {
+        println!("Received event in Rust: {}", event.payload());
+    });
+}
+
 #[derive(Clone, Serialize)]
 pub struct NetworkLog {
     id: String,
@@ -41,6 +47,7 @@ pub struct NetworkLog {
     info: String,
     interface: String,
 }
+
 
 struct Counter {
     value: AtomicUsize,
@@ -80,6 +87,13 @@ pub async fn run() {
             set_selection,
             network::network_dumper::dump
         ])
+        .setup(|app| {
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                listen_to_event(&app_handle).await;
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
