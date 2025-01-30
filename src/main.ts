@@ -15,7 +15,7 @@ type NetIface = {
 }
 
 type NetworkLog = {
-  id: string,
+  npid: string,
   parent: string,
   timestamp: string,
   protocol: string,
@@ -34,14 +34,16 @@ function handleRowSelectChange(event: Event) {
 
 async function handlePacketRowSelect(event: Event) {
   const target = event.target as HTMLInputElement;
-  const packetId = target.id as string;
-  console.log('Packet row selected:', packetId);
-  
-  try {
-    const data: Array<any> = await invoke('get_packet_data', { packetId });
-    console.log('Packet data:', data);
-  } catch (error) {
-    console.error('Failed to fetch packet data:', error);
+  if (target.parentNode) {
+    const packetId = (target.parentNode as HTMLElement).id;
+    console.log('Packet row selected:', packetId);
+
+    try {
+      const data: Array<any> = await invoke('get_packet_data', { packetId });
+      console.log('Packet data:', data);
+    } catch (error) {
+      console.error('Failed to fetch packet data:', error);
+    }
   }
 }
 
@@ -115,7 +117,7 @@ listen<NetworkLog>("update", (event) => {
   if (filterTable) {
     const trElement = document.createElement('tr');
     trElement.innerHTML = `
-      <td>${netlog.id}</td>
+      <td>${netlog.npid}</td>
       <td>${netlog.timestamp}</td>
       <td>${netlog.protocol}</td>
       <td>${netlog.source}</td>
@@ -124,7 +126,7 @@ listen<NetworkLog>("update", (event) => {
       <td>${netlog.info}</td>
       
     `;
-    trElement.id=netlog.id;
+    trElement.id=netlog.npid;
     trElement.addEventListener("click", handlePacketRowSelect);
 
     filterTable?.prepend(trElement);

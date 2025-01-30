@@ -13,7 +13,7 @@ pub fn parse<'a>(
     if let Some(udp) = udp {
        
         let netlog = NetworkLog {
-            id: context.counter.next(),
+            npid: context.counter.next(),
             parent: context.parent_counter.to_string(),
             timestamp:  Utc::now().timestamp_millis().to_string(),
             protocol: "TCP".to_string(),

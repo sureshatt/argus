@@ -13,7 +13,7 @@ pub fn parse<'a>(
     if let Some(ethernet) = ethernet_frame {
 
         let netlog = NetworkLog {
-            id: context.counter.next(),
+            npid: context.counter.next(),
             parent: context.parent_counter.to_string(),
             timestamp:  Utc::now().timestamp_millis().to_string(),
             protocol: "Ethernet".to_string(),

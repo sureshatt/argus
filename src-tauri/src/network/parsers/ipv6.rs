@@ -14,7 +14,7 @@ pub fn parse<'a>(
     if let Some(ipv6_packet) = ipv6_packet {
         
         let netlog = NetworkLog {
-            id: context.counter.next(),
+            npid: context.counter.next(),
             parent: context.parent_counter.to_string(),
             timestamp:  Utc::now().timestamp_millis().to_string(),
             protocol: "IPv6".to_string(),

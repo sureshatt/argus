@@ -18,8 +18,13 @@ struct AppState {
 async fn get_packet_data(state: State<'_, AppState>, packet_id: String) -> Result<Vec<serde_json::Value>, String> {
     println!("Looking for packet : {}", packet_id);
     let db = state.db.read().unwrap().clone();
-    match db.select("logs").await {
-        Ok(data) => Ok(data),
+    let query = format!("SELECT * FROM logs WHERE npid = '{}'", packet_id);
+    match db.query(query).await {
+        Ok(mut response) => {
+            let data: Vec<serde_json::Value> = response.take(0).unwrap();
+            println!("Data: {:?}", data);
+            Ok(data)
+        },
         Err(e) => Err(format!("Failed to get packet data: {}", e)),
     }
 }
@@ -59,7 +64,7 @@ fn listen_to_event(app_handle: &AppHandle, db: &Surreal<Db>) {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct NetworkLog {
-    id: String,
+    npid: String,
     parent: String,
     timestamp: String,
     protocol: String,

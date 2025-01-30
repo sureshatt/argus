@@ -22,7 +22,7 @@ pub fn parse(
             IcmpTypes::EchoReply => {
 
                 let netlog = NetworkLog {
-                    id: context.counter.next(),
+                    npid: context.counter.next(),
                     parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "ICMP".to_string(),
@@ -42,7 +42,7 @@ pub fn parse(
             IcmpTypes::EchoRequest => {
 
                 let netlog = NetworkLog {
-                    id: context.counter.next(),
+                    npid: context.counter.next(),
                     parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "Ethernet".to_string(),
@@ -61,7 +61,7 @@ pub fn parse(
             }
             _ => {
                 let netlog = NetworkLog {
-                    id: context.counter.next(),
+                    npid: context.counter.next(),
                     parent: context.parent_counter.to_string(),
                     timestamp:  Utc::now().timestamp_millis().to_string(),
                     protocol: "ICMP".to_string(),

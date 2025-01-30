@@ -12,7 +12,7 @@ pub fn handle(
     if let Some(arp) = arp_frame {
 
         let netlog = NetworkLog {
-            id: context.counter.next(),
+            npid: context.counter.next(),
             parent: context.parent_counter.to_string(),
             timestamp:  Utc::now().timestamp_millis().to_string(),
             protocol: "ARP".to_string(),
