@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, Mem};
+use surrealdb::key::table::ev;
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -50,14 +51,14 @@ fn listen_to_event(app_handle: &AppHandle, db: &Surreal<Db>) {
         let db_clone = db_clone.clone(); // Clone the db reference to move it into the closure
 
         tauri::async_runtime::spawn(async move {
-            match serde_json::from_str::<NetworkLog>(event.payload()) {
-                Ok(network_log) => {
-                    let _: Vec<serde_json::Value> = db_clone.create("logs").content(&network_log).await.unwrap();
+            match serde_json::from_str::<serde_json::Value>(event.payload()) {
+                Ok(json_payload) => {
+                    let _: Vec<serde_json::Value> = db_clone.create("logs").content(&json_payload).await.unwrap();
                 }
                 Err(e) => {
-                    eprintln!("Failed to parse NetworkLog: {}", e);
+                    eprintln!("Failed to parse JSON payload: {}", e);
                 }
-            }
+            }  
         });
     });
 }

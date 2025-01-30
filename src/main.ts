@@ -108,13 +108,13 @@ async function fetchNetworkInterfaces() {
 fetchNetworkInterfaces();
 
 
-listen<NetworkLog>("update", (event) => {
+listen("update", (event) => {
 
-  const netlog: NetworkLog = event.payload;
+  const netlog = event.payload as Record<string, any>;
   console.log("got NetLogEvent",netlog);
 ``
   const filterTable = document.getElementById("filterTableBody");
-  if (filterTable) {
+  if (filterTable && typeof netlog === "object" && netlog !== null) {
     const trElement = document.createElement('tr');
     trElement.innerHTML = `
       <td>${netlog.npid}</td>
@@ -126,7 +126,11 @@ listen<NetworkLog>("update", (event) => {
       <td>${netlog.info}</td>
       
     `;
-    trElement.id=netlog.npid;
+    
+    if (netlog.npid) {
+      trElement.id = netlog.npid;
+    }
+
     trElement.addEventListener("click", handlePacketRowSelect);
 
     filterTable?.prepend(trElement);
