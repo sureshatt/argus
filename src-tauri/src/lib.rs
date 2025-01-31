@@ -1,7 +1,6 @@
 mod network;
 use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
-use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};

@@ -18,11 +18,13 @@ pub fn parse<'a>(
             "parent": context.parent_counter.to_string(),
             "timestamp": Utc::now().timestamp_millis().to_string(),
             "protocol": "UDP",
-            "source": udp.get_source().to_string(),
-            "destination": udp.get_destination().to_string(),
+            "source": format!("{}:{}", packet.get_source_ip(), udp.get_source()),
+            "destination": format!("{}:{}", packet.get_destination_ip(), udp.get_destination()),
             "length": udp.packet().len().to_string(),
             "info": "",
             "interface": context.interface.name.to_string(),
+            "udp_source": udp.get_source().to_string(),
+            "udp_destination": udp.get_destination().to_string(),
             "checksum": udp.get_checksum().to_string(),
             "payload": udp.payload().to_vec()
         });
