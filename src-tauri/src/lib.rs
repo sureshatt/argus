@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
 use serde::{Deserialize, Serialize};
 use surrealdb::engine::local::{Db, Mem};
-use surrealdb::key::table::ev;
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -61,19 +60,6 @@ fn listen_to_event(app_handle: &AppHandle, db: &Surreal<Db>) {
             }  
         });
     });
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct NetworkLog {
-    npid: String,
-    parent: String,
-    timestamp: String,
-    protocol: String,
-    source: String,
-    destination: String,
-    length: String,
-    info: String,
-    interface: String,
 }
 
 

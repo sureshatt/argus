@@ -1,32 +1,37 @@
+use crate::network::network_dumper::Context;
+use chrono::Utc;
 use pnet::packet::{arp::ArpPacket, Packet};
 use tauri::Emitter;
-use chrono::Utc;
-use crate::{network::network_dumper::Context, NetworkLog};
 
-pub fn handle(
-    packet: &[u8],
-    context: &Context
-) -> Result<(), String> {
+pub fn handle(packet: &[u8], context: &Context) -> Result<(), String> {
     let arp_frame = ArpPacket::new(packet);
 
     if let Some(arp) = arp_frame {
+        use serde_json::json;
 
-        let netlog = NetworkLog {
-            npid: context.counter.next(),
-            parent: context.parent_counter.to_string(),
-            timestamp:  Utc::now().timestamp_millis().to_string(),
-            protocol: "ARP".to_string(),
-            source: format!("{} ({})", arp.get_sender_hw_addr().to_string(),arp.get_sender_proto_addr()),
-            destination: format!("{} ({})", arp.get_target_hw_addr().to_string(),arp.get_target_proto_addr()),
-            length: arp.packet().len().to_string(),
-            info: "".to_string(),
-            interface: (context.interface.name[..]).to_string()
-        };
+        let arp_json = json!({
+            "npid": context.counter.next(),
+            "parent": context.parent_counter.to_string(),
+            "timestamp": Utc::now().timestamp_millis().to_string(),
+            "protocol": "ARP",
+            "source": arp.get_sender_proto_addr().to_string(),
+            "destination": arp.get_target_proto_addr().to_string(),
+            "length": arp.packet().len().to_string(),
+            "info": "",
+            "interface": context.interface.name.to_string(),
+            "hardware_type": arp.get_hardware_type().0.to_string(),
+            "protocol_type": arp.get_protocol_type().to_string(),
+            "hardware_addr_length": arp.get_hw_addr_len().to_string(),
+            "protocol_addr_length": arp.get_proto_addr_len().to_string(),
+            "operation": arp.get_operation().0.to_string(),
+            "sender_hw_addr": arp.get_sender_hw_addr().to_string(),
+            "sender_proto_addr": arp.get_sender_proto_addr().to_string(),
+            "target_hw_addr": arp.get_target_hw_addr().to_string(),
+            "target_proto_addr": arp.get_target_proto_addr().to_string(),
+            "payload": arp.payload().to_vec()
+        });
 
-        let _ = context.app_handle.emit(
-            "update",
-            netlog,
-        );
+        let _ = context.app_handle.emit("update", arp_json);
 
         Ok(())
     } else {
