@@ -36,7 +36,6 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         .unwrap_or_else(|| panic!("No such network interface: {}", selection));
 
         let selected_clone = state.selected.clone();
-        let db_clone = state.db.clone();
         let sequence_generator = state.counter.clone();
 
     // Create a channel to receive on
@@ -55,7 +54,6 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
             return ;
         }
 
-        let db = db_clone.read().unwrap().clone();
         let counter = sequence_generator.read().unwrap();
 
         match rx.next() {

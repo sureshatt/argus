@@ -1,57 +1,61 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="/src/styles.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri App</title>
-    <script type="module" src="/src/main.ts" defer></script>
-  </head>
 
-  <body>
-    <div class="container">
-      <div class="left-section">
-        <div class="row" id="row1">
-          <table id="interfacesTable" class="interfaces-table">
-            <thead>
-              <tr>
-                <th>Select</th>
-                <th>Interface</th>
-                <th>MAC</th>
-                <th>IPV4</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rows will be dynamically generated -->
-            </tbody>
-          </table>
-        </div>
-        <div class="row" id="row2">
-        </div>
-        <div class="row" id="row3"></div>
-        <!-- More rows can be added dynamically -->
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="/src/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tauri App</title>
+  <script type="module" src="/src/main.ts" defer></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="left-section">
+      <div class="row" id="row1">
+        <table id="interfacesTable" class="interfaces-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Interface</th>
+              <th>MAC</th>
+              <th>IPV4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows will be dynamically generated -->
+          </tbody>
+        </table>
       </div>
-      <div class="right-section" id="right-section">
+      <div class="row" id="row2">
+      </div>
+      <div class="row" id="row3"></div>
+      <!-- More rows can be added dynamically -->
+    </div>
+    <div class="right-section" id="right-section">
+      <div class="row" id="packet-logs">
+        <div class="table-container">
         <table id="filterTable">
-          <thead  id="filterTableHead">
-              <tr>
-                  <!--th>Interface<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
-                  <th>Parent Id<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th-->
-                  <th>Id<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
-                  <th>Timestamp<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th>
-                  <th>Protocol<br><input type="text" onkeyup="filterColumn(2)" placeholder="Filter ..."></th>
-                  <th>Source<br><input type="text" onkeyup="filterColumn(3)" placeholder="Filter ..."></th>
-                  <th>Destination<br><input type="text" onkeyup="filterColumn(4)" placeholder="Filter ..."></th>
-                  <th>Length<br><input type="text" onkeyup="filterColumn(5)" placeholder="Filter ..."></th>
-                  <th>Info<br><input type="text" onkeyup="filterColumn(6)" placeholder="Filter ..."></th>
-              </tr>
+          <thead id="filterTableHead">
+            <tr>
+              <th>Id<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
+              <th>Timestamp<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th>
+              <th>Protocol<br><input type="text" onkeyup="filterColumn(2)" placeholder="Filter ..."></th>
+              <th>Source<br><input type="text" onkeyup="filterColumn(3)" placeholder="Filter ..."></th>
+              <th>Destination<br><input type="text" onkeyup="filterColumn(4)" placeholder="Filter ..."></th>
+              <th>Length<br><input type="text" onkeyup="filterColumn(5)" placeholder="Filter ..."></th>
+              <th>Info<br><input type="text" onkeyup="filterColumn(6)" placeholder="Filter ..."></th>
+            </tr>
           </thead>
           <tbody id="filterTableBody">
-              <!-- Rows will be dynamically generated -->
+            <!-- Rows will be dynamically generated -->
           </tbody>
-      </table>
+        </table>
+      </div>
       </div>
     </div>
-  
-  </body>
+  </div>
+
+</body>
+
 </html>

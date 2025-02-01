@@ -14,18 +14,6 @@ type NetIface = {
   is_p2p: boolean
 }
 
-type NetworkLog = {
-  npid: string,
-  parent: string,
-  timestamp: string,
-  protocol: string,
-  source: string,
-  destination: string,
-  length: string,
-  info: string,
-  interface: string,
-}
-
 function handleRowSelectChange(event: Event) {
   const target = event.target as HTMLInputElement;
   invoke("set_selection", { selection: target.value });
@@ -38,11 +26,52 @@ async function handlePacketRowSelect(event: Event) {
     const packetId = (target.parentNode as HTMLElement).id;
     console.log('Packet row selected:', packetId);
 
+    const parentDiv = document.getElementById('right-section') as HTMLTableElement;
+    if (!parentDiv) {
+      console.error("Parent div 'right-section' not found.");
+      return;
+    }
+
+    let selectedPacketDiv = document.getElementById("selectedPacket");
+    if (!selectedPacketDiv) {
+      selectedPacketDiv = document.createElement("div");
+      selectedPacketDiv.id = "selectedPacket";
+      parentDiv.appendChild(selectedPacketDiv);
+    }
+
+    // Clear any existing content in selectedPacketDiv
+    selectedPacketDiv.innerHTML = "";
+
+    const table = document.createElement("table");
+    table.id = "packetTable";
+    selectedPacketDiv.appendChild(table);
+
     try {
       const data: Array<any> = await invoke('get_packet_data', { packetId });
       console.log('Packet data:', data);
+
+      data.forEach((item) => {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        // Ensure "payload" is printed as a single-line array
+        const formattedItem = {
+          ...item,
+          payload: `[${item.payload.join(", ")}]` // Convert array to a single-line string
+        };
+
+        // Convert to JSON string with indentation
+        cell.textContent = JSON.stringify(formattedItem, null, 2);
+
+        // Styling to maintain formatting
+        cell.style.fontFamily = "monospace";
+        cell.style.whiteSpace = "pre-wrap"; // Ensures formatted JSON wraps properly
+
+        row.appendChild(cell);
+        table.appendChild(row);
+      });
     } catch (error) {
-      console.error('Failed to fetch packet data:', error);
+      console.error("Error fetching packet data:", error);
     }
   }
 }
@@ -62,11 +91,11 @@ function filterColumn(columnIndex: number): void {
   const rows = tbody.getElementsByTagName('tr');
 
   for (let i = 0; i < rows.length; i++) {
-      const cell = rows[i].getElementsByTagName('td')[columnIndex];
-      if (cell) {
-          const textValue = cell.textContent || cell.innerText;
-          rows[i].style.display = textValue.toUpperCase().indexOf(filter) > -1 ? '' : 'none';
-      }
+    const cell = rows[i].getElementsByTagName('td')[columnIndex];
+    if (cell) {
+      const textValue = cell.textContent || cell.innerText;
+      rows[i].style.display = textValue.toUpperCase().indexOf(filter) > -1 ? '' : 'none';
+    }
   }
 }
 
@@ -111,8 +140,8 @@ fetchNetworkInterfaces();
 listen("update", (event) => {
 
   const netlog = event.payload as Record<string, any>;
-  console.log("got NetLogEvent",netlog);
-``
+  console.log("got NetLogEvent", netlog);
+  ``
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable && typeof netlog === "object" && netlog !== null) {
     const trElement = document.createElement('tr');
@@ -126,7 +155,7 @@ listen("update", (event) => {
       <td>${netlog.info}</td>
       
     `;
-    
+
     if (netlog.npid) {
       trElement.id = netlog.npid;
     }
