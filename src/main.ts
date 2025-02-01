@@ -23,8 +23,8 @@ function handleRowSelectChange(event: Event) {
 async function handlePacketRowSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.parentNode) {
-    const packetId = (target.parentNode as HTMLElement).id;
-    console.log('Packet row selected:', packetId);
+    const parentId = (target.parentNode as HTMLElement).getAttribute("data-parent");
+    console.log('Packet row selected with parent:', parentId);
 
     const parentDiv = document.getElementById('right-section') as HTMLTableElement;
     if (!parentDiv) {
@@ -47,7 +47,7 @@ async function handlePacketRowSelect(event: Event) {
     selectedPacketDiv.appendChild(table);
 
     try {
-      const data: Array<any> = await invoke('get_packet_data', { packetId });
+      const data: Array<any> = await invoke('get_packet_data', { parentId: parentId });
       console.log('Packet data:', data);
 
       data.forEach((item) => {
@@ -158,6 +158,10 @@ listen("update", (event) => {
 
     if (netlog.npid) {
       trElement.id = netlog.npid;
+    }
+
+    if (netlog.parent) {
+      trElement.setAttribute("data-parent", netlog.parent);
     }
 
     trElement.addEventListener("click", handlePacketRowSelect);
