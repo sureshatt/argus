@@ -17,7 +17,7 @@ struct AppState {
 async fn get_packet_data(state: State<'_, AppState>, parent_id: String) -> Result<Vec<serde_json::Value>, String> {
     println!("Looking for packets with parent : {}", parent_id);
     let db = state.db.read().unwrap().clone();
-    let query = format!("SELECT * FROM logs WHERE parent = '{}'", parent_id);
+    let query = format!("SELECT * FROM logs WHERE parent = '{}' ORDER BY npid ASC", parent_id);
     match db.query(query).await {
         Ok(mut response) => {
             let data: Vec<serde_json::Value> = response.take(0).unwrap();
