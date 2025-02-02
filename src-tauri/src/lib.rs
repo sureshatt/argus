@@ -1,6 +1,7 @@
 mod network;
 use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
+use serde_json::{json, Value};
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
@@ -12,6 +13,26 @@ struct AppState {
     db: Arc<RwLock<Surreal<Db>>>,
     counter: Arc<RwLock<Counter>>
 }
+
+#[tauri::command]
+async fn get_protocol_stats(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    println!("get_protocol_stats called");
+
+    let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
+    let query = "SELECT protocol, COUNT() as count FROM logs GROUP BY protocol ORDER BY count DESC";
+    match db.query(query).await {
+        Ok(mut db_response) => {
+            let data: Vec<serde_json::Value> = db_response.take(0).map_err(|e| format!("Failed to take data from response: {}", e))?;
+            println!("Data: {:?}", data);
+            Ok(data)
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            Err(format!("DB query failed: {}", e))
+        }
+    }
+}
+
 
 #[tauri::command]
 async fn get_packet_data(state: State<'_, AppState>, parent_id: String) -> Result<Vec<serde_json::Value>, String> {
@@ -99,6 +120,7 @@ pub async fn run() {
             get_network_interfaces,
             set_selection,
             get_packet_data,
+            get_protocol_stats,
             network::network_dumper::dump
         ])
         .setup(move |app| {

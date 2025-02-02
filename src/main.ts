@@ -136,12 +136,10 @@ async function fetchNetworkInterfaces() {
 
 fetchNetworkInterfaces();
 
-
-listen("update", (event) => {
-
+function handleNetLogEvent(event: any) {
   const netlog = event.payload as Record<string, any>;
   console.log("got NetLogEvent", netlog);
-  ``
+
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable && typeof netlog === "object" && netlog !== null) {
     const trElement = document.createElement('tr');
@@ -153,7 +151,6 @@ listen("update", (event) => {
       <td>${netlog.destination}</td>
       <td>${netlog.length}</td>
       <td>${netlog.info}</td>
-      
     `;
 
     if (netlog.npid) {
@@ -168,4 +165,48 @@ listen("update", (event) => {
 
     filterTable?.prepend(trElement);
   }
+}
+
+async function handleNetLogStats() {
+  const data: Array<any> = await invoke('get_protocol_stats');
+  console.log('stats:', data);
+
+
+  const tbody = document.querySelector('#statsTable tbody');
+
+  if (!tbody) {
+    console.error("Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+    const cell2 = document.createElement("td");
+
+   console.log('item:', item);
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap"; 
+    cell2.style.fontFamily = "monospace";
+    cell2.style.whiteSpace = "pre-wrap"; 
+
+    cell1.innerHTML = item.protocol;
+    cell2.innerHTML = item.count;
+
+
+    row.appendChild(cell1);
+    row.appendChild(cell2);
+    tbody.appendChild(row);
+  });
+}
+
+listen("update", (event) => {
+
+  handleNetLogEvent(event);
+  handleNetLogStats();
 });
+
