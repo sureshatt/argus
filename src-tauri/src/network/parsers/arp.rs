@@ -7,6 +7,13 @@ pub fn handle(packet: &[u8], context: &Context) -> Result<(), String> {
     let arp_frame = ArpPacket::new(packet);
 
     if let Some(arp) = arp_frame {
+
+        let arp_info = match arp.get_operation().0 {
+            1 => "ARP Request",
+            2 => "ARP Reply",
+            _ => "Unknown",
+        };
+
         use serde_json::json;
 
         let arp_json = json!({
@@ -17,7 +24,7 @@ pub fn handle(packet: &[u8], context: &Context) -> Result<(), String> {
             "source": arp.get_sender_proto_addr().to_string(),
             "destination": arp.get_target_proto_addr().to_string(),
             "length": arp.packet().len().to_string(),
-            "info": "",
+            "info": arp_info,
             "interface": context.interface.name.to_string(),
             "hardware_type": arp.get_hardware_type().0.to_string(),
             "protocol_type": arp.get_protocol_type().to_string(),
