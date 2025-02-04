@@ -1,6 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+let selected_netIface: NetIface = {
+  name: "",
+  mac: "",
+  ipv4_address: "",
+  ipv6_addresses: [],
+  is_up: false,
+  is_running: false,
+  is_loopback: false,
+  is_broadcast: false,
+  is_multicast: false,
+  is_p2p: false
+};
+
 type NetIface = {
   name: String,
   mac: String,
@@ -12,10 +25,15 @@ type NetIface = {
   is_broadcast: boolean,
   is_multicast: boolean,
   is_p2p: boolean
-}
+};
 
 function handleRowSelectChange(event: Event) {
   const target = event.target as HTMLInputElement;
+  console.log('Row selected:', target.dataset.value);
+
+  selected_netIface = JSON.parse(target?.dataset.value || "{}") as NetIface;
+  console.log('Selected interface:', selected_netIface);
+
   invoke("set_selection", { selection: target.value });
   invoke("dump", { selection: target.value });
 }
@@ -47,7 +65,7 @@ async function handlePacketRowSelect(event: Event) {
     selectedPacketDiv.appendChild(table);
 
     try {
-      const data: Array<any> = await invoke('get_packet_data', { parentId: parentId });
+      const data: Array<any> = await invoke('get_packet_data', { parentId: parentId, netIface: selected_netIface.name });
       console.log('Packet data:', data);
 
       data.forEach((item) => {
@@ -118,9 +136,10 @@ async function fetchNetworkInterfaces() {
     console.log('Network Interfaces:', interfaces);
 
     interfaces.forEach(iface => {
+      console.log('iface:', iface);
       const tr = document.createElement('tr');
       tr.innerHTML = `
-          <td><input type="radio" name="rowSelect" value="${iface.name}"></td>
+          <td><input type="radio" name="rowSelect" value="${iface.name}" data-value='${JSON.stringify(iface)}'></td>
           <td>${iface.name}</td>
           <td>${iface.mac}</td>
           <td>${iface.ipv4_address}</td>
@@ -138,7 +157,6 @@ fetchNetworkInterfaces();
 
 function handleNetLogEvent(event: any) {
   const netlog = event.payload as Record<string, any>;
-  console.log("got NetLogEvent", netlog);
 
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable && typeof netlog === "object" && netlog !== null) {
@@ -168,10 +186,7 @@ function handleNetLogEvent(event: any) {
 }
 
 async function handleNetLogStats() {
-  const data: Array<any> = await invoke('get_protocol_stats');
-  console.log('stats:', data);
-
-
+  const data: Array<any> = await invoke('get_protocol_stats', { netIface: selected_netIface.name });
   const tbody = document.querySelector('#statsTable tbody');
 
   if (!tbody) {
@@ -185,8 +200,6 @@ async function handleNetLogStats() {
     const row = document.createElement("tr");
     const cell1 = document.createElement("td");
     const cell2 = document.createElement("td");
-
-   console.log('item:', item);
 
     // Styling to maintain formatting
     cell1.style.fontFamily = "monospace";

@@ -4,6 +4,7 @@ use network::network_interface::{get_net_ifaces, NetIface};
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
+use tokio::net;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
@@ -14,15 +15,12 @@ struct AppState {
 }
 
 #[tauri::command]
-async fn get_protocol_stats(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
-    println!("get_protocol_stats called");
-
+async fn get_protocol_stats(state: State<'_, AppState>, net_iface: String) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
-    let query = "SELECT protocol, COUNT() as count FROM logs GROUP BY protocol ORDER BY count DESC";
+    let query = format!("SELECT protocol, COUNT() as count FROM logs WHERE interface = '{}' GROUP BY protocol ORDER BY count DESC", net_iface);
     match db.query(query).await {
         Ok(mut db_response) => {
             let data: Vec<serde_json::Value> = db_response.take(0).map_err(|e| format!("Failed to take data from response: {}", e))?;
-            println!("Data: {:?}", data);
             Ok(data)
         }
         Err(e) => {
@@ -34,10 +32,10 @@ async fn get_protocol_stats(state: State<'_, AppState>) -> Result<Vec<serde_json
 
 
 #[tauri::command]
-async fn get_packet_data(state: State<'_, AppState>, parent_id: String) -> Result<Vec<serde_json::Value>, String> {
-    println!("Looking for packets with parent : {}", parent_id);
+async fn get_packet_data(state: State<'_, AppState>, parent_id: String, net_iface: String) -> Result<Vec<serde_json::Value>, String> {
+    println!("Looking for packets with parent : {} and interface: {}", parent_id, net_iface);
     let db = state.db.read().unwrap().clone();
-    let query = format!("SELECT * FROM logs WHERE parent = '{}' ORDER BY npid ASC", parent_id);
+    let query = format!("SELECT * FROM logs WHERE parent = '{}' AND interface = '{}' ORDER BY npid ASC", parent_id, net_iface);
     match db.query(query).await {
         Ok(mut response) => {
             let data: Vec<serde_json::Value> = response.take(0).unwrap();
