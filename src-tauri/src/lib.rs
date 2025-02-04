@@ -35,8 +35,10 @@ async fn get_packet_data(state: State<'_, AppState>, parent_id: String, net_ifac
     println!("Looking for packets with parent : {} and interface: {}", parent_id, net_iface);
     let db = state.db.read().unwrap().clone();
     let query = format!("SELECT * FROM logs WHERE parent = '{}' AND interface = '{}' ORDER BY npid ASC", parent_id, net_iface);
+    println!("Query: {}", query);
     match db.query(query).await {
         Ok(mut response) => {
+            println!("Response: {:?}", response);
             let data: Vec<serde_json::Value> = response.take(0).unwrap();
             println!("Data: {:?}", data);
             Ok(data)

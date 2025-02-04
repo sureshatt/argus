@@ -28,14 +28,32 @@ type NetIface = {
 };
 
 function handleRowSelectChange(event: Event) {
+  // clear packets table
+  const filterTable = document.getElementById("filterTableBody");
+  if (filterTable) {
+    filterTable.innerHTML = ""; // Clear previous rows
+  }
+
+  const packetTableBody = document.querySelector('#packetTable tbody');
+  if (packetTableBody) {
+    packetTableBody.innerHTML = ""; // Clear previous rows
+  }
+
+  // clear stats table
+  const statsTableBody = document.querySelector('#statsTable tbody');
+  if (statsTableBody) {
+    statsTableBody.innerHTML = ""; // Clear previous rows
+  }
+
   const target = event.target as HTMLInputElement;
   console.log('Row selected:', target.dataset.value);
 
   selected_netIface = JSON.parse(target?.dataset.value || "{}") as NetIface;
   console.log('Selected interface:', selected_netIface);
-
+  
   invoke("set_selection", { selection: target.value });
   invoke("dump", { selection: target.value });
+  handleNetLogStats();
 }
 
 async function handlePacketRowSelect(event: Event) {
@@ -62,6 +80,8 @@ async function handlePacketRowSelect(event: Event) {
 
     const table = document.createElement("table");
     table.id = "packetTable";
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
     selectedPacketDiv.appendChild(table);
 
     try {
@@ -86,7 +106,7 @@ async function handlePacketRowSelect(event: Event) {
         cell.style.whiteSpace = "pre-wrap"; // Ensures formatted JSON wraps properly
 
         row.appendChild(cell);
-        table.appendChild(row);
+        tbody.appendChild(row);
       });
     } catch (error) {
       console.error("Error fetching packet data:", error);
@@ -220,6 +240,7 @@ async function handleNetLogStats() {
 listen("update", (event) => {
 
   handleNetLogEvent(event);
-  handleNetLogStats();
 });
+
+setInterval(handleNetLogStats, 10000);
 
