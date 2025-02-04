@@ -4,7 +4,6 @@ use network::network_interface::{get_net_ifaces, NetIface};
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
-use tokio::net;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]

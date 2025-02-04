@@ -68,7 +68,7 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
                 };
 
                 let _ = layers::process_packet(packet, &context);
-                thread::sleep(Duration::from_secs(2));
+                //thread::sleep(Duration::from_secs(2));
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
