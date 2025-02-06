@@ -273,6 +273,40 @@ async function handleIngressIpStats() {
   });
 }
 
+async function handleEgressIpStats() {
+  const data: Array<any> = await invoke('get_egress_ip_stats', { netiface: selected_netIface });
+  console.log('Ingress IP Stats:', data);
+
+  const tbody = document.querySelector('#egressIpStatsTable tbody');
+
+  if (!tbody) {
+    console.error("ingress IP Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+    const cell2 = document.createElement("td");
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap"; 
+    cell2.style.fontFamily = "monospace";
+    cell2.style.whiteSpace = "pre-wrap"; 
+
+    cell1.innerHTML = item.destination;
+    cell2.innerHTML = item.count;
+
+
+    row.appendChild(cell1);
+    row.appendChild(cell2);
+    tbody.appendChild(row);
+  });
+}
+
 listen("update", (event) => {
 
   handleNetLogEvent(event);
@@ -280,4 +314,5 @@ listen("update", (event) => {
 
 setInterval(handleNetLogStats, 5000);
 setInterval(handleIngressIpStats, 5000);
+setInterval(handleEgressIpStats, 5000);
 

@@ -66,6 +66,42 @@ async fn get_ingress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->
 }
 
 #[tauri::command]
+async fn get_egress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->Result<Vec<serde_json::Value>, String> {
+    println!("Getting ingress IP stats for interface: {:?}", netiface);
+    let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
+    let ipv4 = netiface.ipv4_address.split('/').next().unwrap();
+    let ipv6: Vec<String> = netiface.ipv6_addresses.iter().map(|ip| ip.split('/').next().unwrap().to_string()).collect();
+    
+    let query =
+        "SELECT destination, COUNT() as count 
+         FROM logs 
+         WHERE interface = $iface 
+           AND protocol IN ['IPv4', 'IPv6'] 
+           AND (protocol = 'IPv4' AND destination != $ipv4 
+                OR protocol = 'IPv6' AND destination NOT IN $ipv6) 
+         GROUP BY destination 
+         ORDER BY count DESC";
+
+    println!("Query: {}", query);
+    
+    match db.query(query).
+            bind(("iface", &netiface.name)).
+            bind(("ipv4", &ipv4)).
+            bind(("ipv6", &ipv6)).await {
+
+        Ok(mut db_response) => {
+            let data: Vec<serde_json::Value> = db_response.take(0).map_err(|e| format!("Failed to take data from response: {}", e))?;
+            println!("Data: {:?}", data);
+            Ok(data)
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            Err(format!("DB query failed: {}", e))
+        }
+    }
+}
+
+#[tauri::command]
 async fn get_packet_data(state: State<'_, AppState>, parent_id: String, net_iface: String) -> Result<Vec<serde_json::Value>, String> {
     println!("Looking for packets with parent : {} and interface: {}", parent_id, net_iface);
     let db = state.db.read().unwrap().clone();
@@ -155,6 +191,7 @@ pub async fn run() {
             get_packet_data,
             get_protocol_stats,
             get_ingress_ip_stats,
+            get_egress_ip_stats,
             network::network_dumper::dump
         ])
         .setup(move |app| {

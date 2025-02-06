@@ -147,3 +147,38 @@ input {
 #ingressIpStatsTable td {
   width: 100%;
 }
+
+#egressIpStatsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#egressIpStatsTable th, #ingressIpStatsTable td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+/* Fixed height for the tbody and enable scrolling */
+#egressIpStatsTableBody {
+  display: block;
+  height: 200px; /* Adjust as needed */
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* Ensure the header stays fixed at the top */
+#egressIpStatsTable thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Optional: Style for the table rows */
+#egressIpStatsTable tr {
+  width: 100%;
+}
+
+#egressIpStatsTable td {
+  width: 100%;
+}
