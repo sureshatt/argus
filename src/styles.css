@@ -101,6 +101,7 @@ input {
 
 .interfaces-table th {
   background-color: #f2f2f2;
+  resize: horizontal;
 }
 
 .interfaces-table tr:nth-child(even) {
@@ -110,4 +111,39 @@ input {
 .interfaces-table tr:hover {
   background-color: #ddd;
   cursor: pointer;
+}
+
+#ingressIpStatsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#ingressIpStatsTable th, #ingressIpStatsTable td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+/* Fixed height for the tbody and enable scrolling */
+#ingressIpStatsTableBody {
+  display: block;
+  height: 200px; /* Adjust as needed */
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* Ensure the header stays fixed at the top */
+#ingressIpStatsTable thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Optional: Style for the table rows */
+#ingressIpStatsTable tr {
+  width: 100%;
+}
+
+#ingressIpStatsTable td {
+  width: 100%;
 }

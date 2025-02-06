@@ -19,7 +19,8 @@
               <th>Select</th>
               <th>Interface</th>
               <th>MAC</th>
-              <th>IPV4</th>
+              <th>IPv4</th>
+              <th>IPv6</th>
             </tr>
           </thead>
           <tbody>
@@ -40,8 +41,20 @@
           </tbody>
         </table>
       </div>
-      <div class="row" id="row3"></div>
-      <!-- More rows can be added dynamically -->
+      <div class="row" id="row3">
+        <table id="ingressIpStatsTable" class="interfaces-table">
+          <thead>
+            <tr>
+              <th>Source IP</th>
+              <th>Count</th>
+            </tr>
+          </thead>
+          <tbody id="ingressIpStatsTableBody">
+            <!-- Rows will be dynamically generated -->
+          </tbody>
+        </table>
+      </div>
+      
     </div>
     <div class="right-section" id="right-section">
       <div class="row" id="packet-logs">

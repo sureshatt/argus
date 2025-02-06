@@ -1,18 +1,18 @@
 use pnet::{datalink::NetworkInterface, ipnetwork::IpNetwork};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Debug,Deserialize, Serialize)]
 pub struct NetIface {
-    name: String,
-    mac: String,
-    ipv4_address: String,
-    ipv6_addresses: Vec<String>,
-    is_up: bool,
-    is_running: bool,
-    is_loopback: bool,
-    is_broadcast: bool,
-    is_multicast: bool,
-    is_p2p: bool
+    pub name: String,
+    pub mac: String,
+    pub ipv4_address: String,
+    pub ipv6_addresses: Vec<String>,
+    pub is_up: bool,
+    pub is_running: bool,
+    pub is_loopback: bool,
+    pub is_broadcast: bool,
+    pub is_multicast: bool,
+    pub is_p2p: bool
 }
 
 impl NetIface {

@@ -27,7 +27,7 @@ type NetIface = {
   is_p2p: boolean
 };
 
-function handleRowSelectChange(event: Event) {
+async function handleRowSelectChange(event: Event) {
   // clear packets table
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable) {
@@ -53,7 +53,8 @@ function handleRowSelectChange(event: Event) {
   
   invoke("set_selection", { selection: target.value });
   invoke("dump", { selection: target.value });
-  handleNetLogStats();
+  await handleNetLogStats();
+  await handleIngressIpStats();
 }
 
 async function handlePacketRowSelect(event: Event) {
@@ -163,6 +164,7 @@ async function fetchNetworkInterfaces() {
           <td>${iface.name}</td>
           <td>${iface.mac}</td>
           <td>${iface.ipv4_address}</td>
+          <td>${iface.ipv6_addresses.join("<br>")}</td>
         `;
       tr.addEventListener("change", handleRowSelectChange);
       tbody.appendChild(tr);
@@ -237,10 +239,45 @@ async function handleNetLogStats() {
   });
 }
 
+async function handleIngressIpStats() {
+  const data: Array<any> = await invoke('get_ingress_ip_stats', { netiface: selected_netIface });
+  console.log('Ingress IP Stats:', data);
+
+  const tbody = document.querySelector('#ingressIpStatsTable tbody');
+
+  if (!tbody) {
+    console.error("ingress IP Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+    const cell2 = document.createElement("td");
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap"; 
+    cell2.style.fontFamily = "monospace";
+    cell2.style.whiteSpace = "pre-wrap"; 
+
+    cell1.innerHTML = item.source;
+    cell2.innerHTML = item.count;
+
+
+    row.appendChild(cell1);
+    row.appendChild(cell2);
+    tbody.appendChild(row);
+  });
+}
+
 listen("update", (event) => {
 
   handleNetLogEvent(event);
 });
 
-setInterval(handleNetLogStats, 10000);
+setInterval(handleNetLogStats, 5000);
+setInterval(handleIngressIpStats, 5000);
 
