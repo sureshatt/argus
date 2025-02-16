@@ -307,6 +307,34 @@ async function handleEgressIpStats() {
   });
 }
 
+async function handleArpIpStats() {
+  const data: Array<any> = await invoke('get_arp_ip_stats', { netiface: selected_netIface });
+  console.log('ARP IP Stats:', data);
+
+  const tbody = document.querySelector('#arpIpStatsTable tbody');
+
+  if (!tbody) {
+    console.error("ARP IP Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap"; 
+
+    cell1.innerHTML = item.sender_proto_addr + " ( " + item.sender_hw_addr + " ) ";
+
+    row.appendChild(cell1);
+    tbody.appendChild(row);
+  });
+}
+
 listen("update", (event) => {
 
   handleNetLogEvent(event);
@@ -315,4 +343,5 @@ listen("update", (event) => {
 setInterval(handleNetLogStats, 5000);
 setInterval(handleIngressIpStats, 5000);
 setInterval(handleEgressIpStats, 5000);
+setInterval(handleArpIpStats, 5000);
 

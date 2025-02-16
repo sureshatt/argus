@@ -1,6 +1,8 @@
 mod network;
+use std::collections::{HashSet, HashMap};
 use std::sync::{Arc, RwLock};
 use network::network_interface::{get_net_ifaces, NetIface};
+use serde_json::json;
 use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
 use tauri::{Listener, State, AppHandle};
@@ -31,7 +33,7 @@ async fn get_protocol_stats(state: State<'_, AppState>, net_iface: String) -> Re
 
 #[tauri::command]
 async fn get_ingress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->Result<Vec<serde_json::Value>, String> {
-    println!("Getting ingress IP stats for interface: {:?}", netiface);
+    println!("Getting ingress IP stats");
     let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
     let ipv4 = netiface.ipv4_address.split('/').next().unwrap();
     let ipv6: Vec<String> = netiface.ipv6_addresses.iter().map(|ip| ip.split('/').next().unwrap().to_string()).collect();
@@ -45,8 +47,6 @@ async fn get_ingress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->
                 OR protocol = 'IPv6' AND source NOT IN $ipv6) 
          GROUP BY source 
          ORDER BY count DESC";
-
-    println!("Query: {}", query);
     
     match db.query(query).
             bind(("iface", &netiface.name)).
@@ -55,7 +55,6 @@ async fn get_ingress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->
 
         Ok(mut db_response) => {
             let data: Vec<serde_json::Value> = db_response.take(0).map_err(|e| format!("Failed to take data from response: {}", e))?;
-            println!("Data: {:?}", data);
             Ok(data)
         }
         Err(e) => {
@@ -67,7 +66,7 @@ async fn get_ingress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->
 
 #[tauri::command]
 async fn get_egress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->Result<Vec<serde_json::Value>, String> {
-    println!("Getting ingress IP stats for interface: {:?}", netiface);
+    println!("Getting Egress IP stats");
     let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
     let ipv4 = netiface.ipv4_address.split('/').next().unwrap();
     let ipv6: Vec<String> = netiface.ipv6_addresses.iter().map(|ip| ip.split('/').next().unwrap().to_string()).collect();
@@ -81,8 +80,6 @@ async fn get_egress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->R
                 OR protocol = 'IPv6' AND destination NOT IN $ipv6) 
          GROUP BY destination 
          ORDER BY count DESC";
-
-    println!("Query: {}", query);
     
     match db.query(query).
             bind(("iface", &netiface.name)).
@@ -91,7 +88,6 @@ async fn get_egress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->R
 
         Ok(mut db_response) => {
             let data: Vec<serde_json::Value> = db_response.take(0).map_err(|e| format!("Failed to take data from response: {}", e))?;
-            println!("Data: {:?}", data);
             Ok(data)
         }
         Err(e) => {
@@ -102,16 +98,33 @@ async fn get_egress_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->R
 }
 
 #[tauri::command]
+async fn get_arp_ip_stats(state: State<'_, AppState>, netiface: NetIface) ->Result<Vec<serde_json::Value>, String> {
+    println!("Getting ARP IP stats");
+    let db = state.db.read().map_err(|e| format!("Failed to read DB: {}", e))?.clone();
+
+    let query2 = "SELECT sender_proto_addr, sender_hw_addr FROM logs WHERE interface = $iface AND protocol = 'ARP'";
+    let responders: Vec<serde_json::Value> = db.query(query2).bind(("iface", &netiface.name)).await.map_err(|e| e.to_string())?.take(0).map_err(|e| e.to_string())?;
+    println!("Responders: {:?}", responders);
+    
+    let unique_ips: HashSet<serde_json::Value> = responders.into_iter().collect();
+    let mut sorted_unique_ips: Vec<serde_json::Value> = unique_ips.into_iter().collect();
+    sorted_unique_ips.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
+
+    println!("Unique IPs: {:?}", sorted_unique_ips);
+    Ok(sorted_unique_ips)
+}
+
+
+
+
+#[tauri::command]
 async fn get_packet_data(state: State<'_, AppState>, parent_id: String, net_iface: String) -> Result<Vec<serde_json::Value>, String> {
     println!("Looking for packets with parent : {} and interface: {}", parent_id, net_iface);
     let db = state.db.read().unwrap().clone();
     let query = format!("SELECT * FROM logs WHERE parent = '{}' AND interface = '{}' ORDER BY npid ASC", parent_id, net_iface);
-    println!("Query: {}", query);
     match db.query(query).await {
         Ok(mut response) => {
-            println!("Response: {:?}", response);
             let data: Vec<serde_json::Value> = response.take(0).unwrap();
-            println!("Data: {:?}", data);
             Ok(data)
         },
         Err(e) => Err(format!("Failed to get packet data: {}", e)),
@@ -192,6 +205,7 @@ pub async fn run() {
             get_protocol_stats,
             get_ingress_ip_stats,
             get_egress_ip_stats,
+            get_arp_ip_stats,
             network::network_dumper::dump
         ])
         .setup(move |app| {
