@@ -328,7 +328,7 @@ async function handleArpIpStats() {
     cell1.style.fontFamily = "monospace";
     cell1.style.whiteSpace = "pre-wrap"; 
 
-    cell1.innerHTML = item.sender_proto_addr + " ( " + item.sender_hw_addr + " ) ";
+    cell1.innerHTML = item.sender_proto_addr + " (" + item.sender_hw_addr + ") ";
 
     row.appendChild(cell1);
     tbody.appendChild(row);
