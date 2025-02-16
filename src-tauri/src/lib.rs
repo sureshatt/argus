@@ -146,22 +146,25 @@ async fn get_arp_ip_stats(
         .map_err(|e| format!("Failed to read DB: {}", e))?
         .clone();
 
-    let query2 = "SELECT sender_proto_addr, sender_hw_addr FROM logs WHERE interface = $iface AND protocol = 'ARP'";
-    let responders: Vec<serde_json::Value> = db
-        .query(query2)
-        .bind(("iface", &netiface.name))
-        .await
-        .map_err(|e| e.to_string())?
-        .take(0)
-        .map_err(|e| e.to_string())?;
-    println!("Responders: {:?}", responders);
+    let query = "SELECT sender_proto_addr, sender_hw_addr,  COUNT() as count 
+        FROM logs 
+        WHERE interface = $iface 
+        AND protocol = 'ARP' 
+        GROUP BY sender_proto_addr, sender_hw_addr 
+        ORDER BY count DESC";
 
-    let unique_ips: HashSet<serde_json::Value> = responders.into_iter().collect();
-    let mut sorted_unique_ips: Vec<serde_json::Value> = unique_ips.into_iter().collect();
-    sorted_unique_ips.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
-
-    println!("Unique IPs: {:?}", sorted_unique_ips);
-    Ok(sorted_unique_ips)
+    match db.query(query).bind(("iface", &netiface.name)).await {
+        Ok(mut db_response) => {
+            let data: Vec<serde_json::Value> = db_response
+                .take(0)
+                .map_err(|e| format!("Failed to take data from response: {}", e))?;
+            Ok(data)
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            Err(format!("DB query failed: {}", e))
+        }
+    }
 }
 
 #[tauri::command]
