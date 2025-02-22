@@ -4,5 +4,13 @@ pub fn process(
     segment: &TransportSegmentPayload,
     context: &Context,
 ) -> Result<(), String> {
-    Ok(())
+    match segment {
+        TransportSegmentPayload::Dns(udp) => {
+                        let _ = crate::network::parsers::dns::parse(udp, context);
+                        Ok(())
+            }
+       _ => {
+            Ok(())
+        }
+    }
 }

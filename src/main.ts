@@ -96,7 +96,7 @@ async function handlePacketRowSelect(event: Event) {
         // Ensure "payload" is printed as a single-line array
         const formattedItem = {
           ...item,
-          payload: `[${item.payload.join(", ")}]` // Convert array to a single-line string
+          payload: Array.isArray(item.payload) ? `[${item.payload.join(", ")}]` : "[]", // Ensure payload is an array
         };
 
         // Convert to JSON string with indentation
