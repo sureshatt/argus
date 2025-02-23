@@ -3,7 +3,7 @@ use chrono::Utc;
 use pnet::packet::{
     icmpv6::{
         echo_reply::EchoReplyPacket, echo_request::EchoRequestPacket, Icmpv6Packet, Icmpv6Types,
-    }, ipv6::Ipv6Packet, vlan::ClassesOfService::IC, Packet
+    }, ipv6::Ipv6Packet, Packet
 };
 use serde_json::json;
 use tauri::Emitter;
@@ -51,6 +51,10 @@ enum Icmpv6PacketType {
 impl From<u8> for Icmpv6PacketType {
     fn from(value: u8) -> Self {
         match value {
+            1 => Icmpv6PacketType::DestinationUnreachable,
+            2 => Icmpv6PacketType::PacketTooBig,
+            3 => Icmpv6PacketType::TimeExceeded,
+            4 => Icmpv6PacketType::ParameterProblem,
             128 => Icmpv6PacketType::EchoRequest,
             129 => Icmpv6PacketType::EchoReply,
             133 => Icmpv6PacketType::RouterSolicitation,
