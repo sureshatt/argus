@@ -1,7 +1,5 @@
 mod network;
 use network::network_interface::{get_net_ifaces, NetIface};
-use serde_json::json;
-use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use surrealdb::engine::local::{Db, Mem};

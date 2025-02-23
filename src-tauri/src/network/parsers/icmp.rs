@@ -11,6 +11,78 @@ use pnet::packet::{
 use serde_json::json;
 use tauri::Emitter;
 
+#[derive(Debug)]
+enum IcmpPacketType {
+    EchoReply,
+    DestinationUnreachable,
+    SourceQuench,
+    Redirect,
+    EchoRequest,
+    RouterAdvertisement,
+    RouterSolicitation,
+    TimeExceeded,
+    ParameterProblem,
+    TimestampRequest,
+    TimestampReply,
+    InformationRequest,
+    InformationReply,
+    AddressMaskRequest,
+    AddressMaskReply,
+    Traceroute,
+    Unknown,
+}
+
+impl From<u8> for IcmpPacketType {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => IcmpPacketType::EchoReply,
+            3 => IcmpPacketType::DestinationUnreachable,
+            4 => IcmpPacketType::SourceQuench,
+            5 => IcmpPacketType::Redirect,
+            8 => IcmpPacketType::EchoRequest,
+            9 => IcmpPacketType::RouterAdvertisement,
+            10 => IcmpPacketType::RouterSolicitation,
+            11 => IcmpPacketType::TimeExceeded,
+            12 => IcmpPacketType::ParameterProblem,
+            13 => IcmpPacketType::TimestampRequest,
+            14 => IcmpPacketType::TimestampReply,
+            15 => IcmpPacketType::InformationRequest,
+            16 => IcmpPacketType::InformationReply,
+            17 => IcmpPacketType::AddressMaskRequest,
+            18 => IcmpPacketType::AddressMaskReply,
+            30 => IcmpPacketType::Traceroute,
+            _ => IcmpPacketType::Unknown,
+        }
+    }
+}
+
+impl ToString for IcmpPacketType {
+
+    fn to_string(&self) -> String {
+        match self {
+            IcmpPacketType::EchoReply => "Echo Reply",
+            IcmpPacketType::DestinationUnreachable => "Destination Unreachable",
+            IcmpPacketType::SourceQuench => "Source Quench",
+            IcmpPacketType::Redirect => "Redirect",
+            IcmpPacketType::EchoRequest => "Echo Request",
+            IcmpPacketType::RouterAdvertisement => "Router Advertisement",
+            IcmpPacketType::RouterSolicitation => "Router Solicitation",
+            IcmpPacketType::TimeExceeded => "Time Exceeded",
+            IcmpPacketType::ParameterProblem => "Parameter Problem",
+            IcmpPacketType::TimestampRequest => "Timestamp Request",
+            IcmpPacketType::TimestampReply => "Timestamp Reply",
+            IcmpPacketType::InformationRequest => "Information Request",
+            IcmpPacketType::InformationReply => "Information Reply",
+            IcmpPacketType::AddressMaskRequest => "Address Mask Request",
+            IcmpPacketType::AddressMaskReply => "Address Mask Reply",
+            IcmpPacketType::Traceroute => "Traceroute",
+            IcmpPacketType::Unknown => "Unknown",
+        }
+        .to_string()
+    }
+    
+}
+
 pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> {
     let icmp_packet = IcmpPacket::new(ipv4_packet.payload());
     let source = ipv4_packet.get_source();
@@ -113,6 +185,9 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                 let _ = context.app_handle.emit("update", icmp_json);
             }
             _ => {
+
+                let icmp_type: IcmpPacketType = icmp_packet.get_icmp_type().0.into();
+
                 let icmp_json = json!({
                     "npid": context.counter.next(),
                     "parent": context.parent_counter.to_string(),
@@ -121,7 +196,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "source": source.to_string(),
                     "destination": destination.to_string(),
                     "length": icmp_packet.packet().len().to_string(),
-                    "info": "ICMP",
+                    "info":  icmp_type.to_string(),  
                     "interface": context.interface.name.to_string(),
                     "icmp_type": icmp_packet.get_icmp_type().0.to_string(),
                     "icmp_code": icmp_packet.get_icmp_code().0.to_string(),
