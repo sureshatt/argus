@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use serde_json::Value;
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -14,433 +13,45 @@ pub struct BasicLogEntry {
     pub interface: String,
     pub payload: Vec<u8>,
 }
-impl BasicLogEntry {
-    pub fn new(log_entry: &LogEntry) -> Self {
-        match log_entry {
-            LogEntry::ARP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::DNS { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::Ethernet { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::ICMP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::ICMPv6 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::IPv4 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::IPv6 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::TCP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
-            LogEntry::UDP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),     
-            LogEntry::Other { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),   
+
+impl TryFrom<Value> for BasicLogEntry {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        let obj = value.as_object().ok_or("Expected JSON object")?;
+
+        macro_rules! get_str {
+            ($key:expr) => {
+                obj.get($key)
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| format!("Missing or invalid '{}'", $key))?
+                    .to_string()
+            };
         }
-    }
 
-    pub fn from(npid: &str, parent: &str, timestamp: &str, protocol: &str, source: &str, destination: &str, length: &str, info: &str, interface: &str, payload: &[u8]) -> Self {
-        BasicLogEntry {
-            npid: npid.to_string(),
-            parent: parent.to_string(),
-            timestamp: timestamp.to_string(),
-            protocol: protocol.to_string(),
-            source: source.to_string(),
-            destination: destination.to_string(),
-            length: length.to_string(),
-            info: info.to_string(),
-            interface: interface.to_string(),
-            payload: payload.to_vec(),
-        }
-    }
-}
+        let payload = match obj.get("payload") {
+            Some(Value::Array(arr)) => {
+                arr.iter()
+                    .map(|v| v.as_u64().ok_or("Payload must be array of u8"))
+                    .collect::<Result<Vec<u64>, _>>()?
+                    .into_iter()
+                    .map(|n| n as u8)
+                    .collect()
+            }
+            _ => return Err("Missing or invalid 'payload'".into()),
+        };
 
-#[derive(Debug, Clone, serde::Serialize)]
-#[allow(dead_code)]
-pub enum LogEntry {
-    ARP {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        hardware_type: String,
-        protocol_type: String,
-        hardware_addr_length: String,
-        protocol_addr_length: String,
-        operation: String,
-        sender_hw_addr: String,
-        sender_proto_addr: String,
-        target_hw_addr: String,
-        target_proto_addr: String,
-    },
-    DNS {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        header: String,
-        queries: Vec<String>,
-        answers: Vec<String>,
-        name_servers: Vec<String>,
-        additionals: Vec<String>,
-        signature: String,
-        edns: Option<String>,
-    },
-    Ethernet {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        ethernet_type: String,
-    },
-    ICMP {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        icmp_type: String,
-        icmp_code: String,
-        checksum: String,
-    },
-    ICMPv6 {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        icmp_type: String,
-        icmp_code: String,
-        checksum: String,
-        identifier: String,
-        sequence_number: String,
-    },
-    IPv4 {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        version: String,
-        header_length: String,
-        dscp: String,
-        ecn: String,
-        total_length: String,
-        identification: String,
-        flags: String,
-        fragment_offset: String,
-        ttl: String,
-        next_level_protocol: String,
-        checksum: String,
-        source_ip: String,
-        destination_ip: String,
-        options: VecDeque<u8>,
-    },
-    IPv6 {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        version: String,
-        traffic_class: String,
-        flow_label: String,
-        payload_length: String,
-        next_header: String,
-        hop_limit: String,
-        source_ip: String,
-        destination_ip: String,
-    },
-    TCP {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        tcp_source: String,
-        tcp_destination: String,
-        sequence_number: String,
-        acknowledgment_number: String,
-        data_offset: String,
-        reserved: String,
-        flags: String,
-        window: String,
-        checksum: String,
-        urgent_pointer: String,
-        options: VecDeque<u8>,
-    },
-    UDP {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-        udp_source: String,
-        udp_destination: String,
-        checksum: String,
-    },
-    Other {
-        npid: String,
-        parent: String,
-        timestamp: String,
-        protocol: String,
-        source: String,
-        destination: String,
-        length: String,
-        info: String,
-        interface: String,
-        payload: Vec<u8>,
-    },
-}
-
-pub fn parse_log_entry(json: Value) -> Option<LogEntry> {
-    if !json.is_object() {
-        eprintln!("Invalid JSON format");
-        return None;
-    }
-    if !json.get("protocol").is_some() {
-        eprintln!("Missing protocol field");
-        return None;
-    }
-    println!("Parsing log entry...");
-    
-    let obj = json.as_object()?;
-
-    let npid = obj.get("npid")?.as_str()?.to_string();
-    let parent = obj.get("parent")?.as_str()?.to_string();
-    let timestamp = obj.get("timestamp")?.as_str()?.to_string();
-    let protocol_key = obj.get("protocol")?.as_str()?;
-    let protocol = obj.get("protocol")?.as_str()?.to_string();
-    let source = obj.get("source")?.as_str()?.to_string();
-    let destination = obj.get("destination")?.as_str()?.to_string();
-    let length = obj.get("length")?.as_str()?.to_string();
-    let info = obj.get("info")?.as_str()?.to_string();
-    let interface = obj.get("interface")?.as_str()?.to_string();
-    let payload = obj.get("payload")?.as_array()?.iter().map(|v| v.as_u64().map(|n| n as u8)).collect::<Option<Vec<u8>>>()?;
-
-    println!("Parsing protocol: {}", protocol);
-
-    match protocol_key {
-        "ARP" => Some(LogEntry::ARP {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
+        Ok(BasicLogEntry {
+            npid: get_str!("npid"),
+            parent: get_str!("parent"),
+            timestamp: get_str!("timestamp"),
+            protocol: get_str!("protocol"),
+            source: get_str!("source"),
+            destination: get_str!("destination"),
+            length: get_str!("length"),
+            info: get_str!("info"),
+            interface: get_str!("interface"),
             payload,
-            hardware_type: obj.get("hardware_type")?.as_str()?.to_string(),
-            protocol_type: obj.get("protocol_type")?.as_str()?.to_string(),
-            hardware_addr_length: obj.get("hardware_addr_length")?.as_str()?.to_string(),
-            protocol_addr_length: obj.get("protocol_addr_length")?.as_str()?.to_string(),
-            operation: obj.get("operation")?.as_str()?.to_string(),
-            sender_hw_addr: obj.get("sender_hw_addr")?.as_str()?.to_string(),
-            sender_proto_addr: obj.get("sender_proto_addr")?.as_str()?.to_string(),
-            target_hw_addr: obj.get("target_hw_addr")?.as_str()?.to_string(),
-            target_proto_addr: obj.get("target_proto_addr")?.as_str()?.to_string(),
-        }),
-        "DNS" => Some(LogEntry::DNS {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            header: obj.get("header")?.as_str()?.to_string(),
-            queries: obj.get("queries")?.as_array()?.iter().map(|v| v.as_str().unwrap_or_default().to_string()).collect(),
-            answers: obj.get("answers")?.as_array()?.iter().map(|v| v.as_str().unwrap_or_default().to_string()).collect(),
-            name_servers: obj.get("name_servers")?.as_array()?.iter().map(|v| v.as_str().unwrap_or_default().to_string()).collect(),
-            additionals: obj.get("additionals")?.as_array()?.iter().map(|v| v.as_str().unwrap_or_default().to_string()).collect(),
-            signature: obj.get("signature")?.as_str()?.to_string(),
-            edns: obj.get("edns").and_then(|v| v.as_str().map(|s| s.to_string())),
-        }),
-        "Ethernet" => Some(LogEntry::Ethernet {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            ethernet_type: obj.get("ethernet_type")?.as_str()?.to_string(),
-        }),
-        "ICMP" => Some(LogEntry::ICMP {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            icmp_type: obj.get("icmp_type")?.as_str()?.to_string(),
-            icmp_code: obj.get("code")?.as_str()?.to_string(),
-            checksum: obj.get("checksum")?.as_str()?.to_string(),
-        }),
-        "ICMPv6" => Some(LogEntry::ICMPv6 {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            icmp_type: obj.get("icmp_type")?.as_str()?.to_string(),
-            icmp_code: obj.get("code")?.as_str()?.to_string(),
-            checksum: obj.get("checksum")?.as_str()?.to_string(),
-            identifier: obj.get("identifier")?.as_str()?.to_string(),
-            sequence_number: obj.get("sequence_number")?.as_str()?.to_string(),
-        }),
-        "IPv4" => Some(LogEntry::IPv4 {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            version: obj.get("version")?.as_str()?.to_string(),
-            header_length: obj.get("header_length")?.as_str()?.to_string(),
-            dscp: obj.get("dscp")?.as_str()?.to_string(),
-            ecn: obj.get("ecn")?.as_str()?.to_string(),
-            total_length: obj.get("total_length")?.as_str()?.to_string(),
-            identification: obj.get("identification")?.as_str()?.to_string(),
-            flags: obj.get("flags")?.as_str()?.to_string(),
-            fragment_offset: obj.get("fragment_offset")?.as_str()?.to_string(),
-            ttl: obj.get("ttl")?.as_str()?.to_string(),
-            next_level_protocol: obj.get("next_level_protocol")?.as_str()?.to_string(),
-            checksum: obj.get("header_checksum")?.as_str()?.to_string(),
-            source_ip: obj.get("source_address")?.as_str()?.to_string(),
-            destination_ip: obj.get("destination_address")?.as_str()?.to_string(),
-            options: obj.get("options")?.as_array()?.iter().filter_map(|v| v.as_u64()).map(|n| n as u8).collect(),
-        }),
-        "IPv6" => Some(LogEntry::IPv6 {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            version: obj.get("version")?.as_str()?.to_string(),
-            traffic_class: obj.get("traffic_class")?.as_str()?.to_string(),
-            flow_label: obj.get("flow_label")?.as_str()?.to_string(),
-            payload_length: obj.get("payload_length")?.as_str()?.to_string(),
-            next_header: obj.get("next_header")?.as_str()?.to_string(),
-            hop_limit: obj.get("hop_limit")?.as_str()?.to_string(),
-            source_ip: obj.get("source_address")?.as_str()?.to_string(),
-            destination_ip: obj.get("destination_address")?.as_str()?.to_string(),
-        }),
-        "TCP" => Some(LogEntry::TCP {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            tcp_source: obj.get("source_port")?.as_str()?.to_string(),
-            tcp_destination: obj.get("destination_port")?.as_str()?.to_string(),
-            sequence_number: obj.get("sequence_number")?.as_str()?.to_string(),
-            acknowledgment_number: obj.get("acknowledgment_number")?.as_str()?.to_string(),
-            data_offset: obj.get("data_offset")?.as_str()?.to_string(),
-            reserved: obj.get("reserved")?.as_str()?.to_string(),
-            flags: obj.get("flags")?.as_str()?.to_string(),
-            window: obj.get("window_size")?.as_str()?.to_string(),
-            checksum: obj.get("checksum")?.as_str()?.to_string(),
-            urgent_pointer: obj.get("urgent_pointer")?.as_str()?.to_string(),
-            options: obj.get("options")?.as_array()?.iter().filter_map(|v| v.as_u64()).map(|n| n as u8).collect(),
-        }),
-        "UDP" => Some(LogEntry::UDP {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-            udp_source: obj.get("source_port")?.as_str()?.to_string(),
-            udp_destination: obj.get("destination_port")?.as_str()?.to_string(),
-            checksum: obj.get("checksum")?.as_str()?.to_string(),
-        }),
-       
-        _ => Some(LogEntry::Other {
-            npid,
-            parent,
-            timestamp,
-            protocol: protocol.to_string(),
-            source,
-            destination,
-            length,
-            info,
-            interface,
-            payload,
-        }),
+        })
     }
 }
