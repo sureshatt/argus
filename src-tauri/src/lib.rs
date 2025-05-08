@@ -1,7 +1,9 @@
 mod network;
 mod storage;
+use storage::log_entry::LogEntry;
 use storage::logger::listen_to_event;
 use network::network_interface::{get_net_ifaces, NetIface};
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use tauri::State;
@@ -50,6 +52,7 @@ impl Counter {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
     let sq_counter = Counter::new();
+    let logs_store: VecDeque<LogEntry> = VecDeque::new();
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
@@ -66,7 +69,7 @@ pub async fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            listen_to_event(&app_handle);
+            listen_to_event(&app_handle, &logs_store);
             Ok(())
         })
         .run(tauri::generate_context!())
