@@ -51,7 +51,7 @@ impl Counter {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
     let sq_counter = Counter::new();
-    let max_number_of_logs: usize = 1000;
+    let max_number_of_logs = 1000;
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
 
@@ -70,7 +70,7 @@ pub async fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            listen_to_event(&app_handle, &basic_logs_store, &detailed_logs_store);
+            listen_to_event(&app_handle, &basic_logs_store, &detailed_logs_store, max_number_of_logs);
             Ok(())
         })
         .run(tauri::generate_context!())

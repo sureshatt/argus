@@ -4,7 +4,7 @@ use tauri::{AppHandle, Emitter, Listener};
 use crate::storage::log_entry::BasicLogEntry;
 
 
-pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &lru::LruCache<u32, String>) {
+pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &lru::LruCache<u32, String>, max_number_of_logs: usize) {
 
     println!("Listening to events...");
 
@@ -35,10 +35,14 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store: &VecDequ
                                 let mut basic_logs_store = basic_logs_store_ref.lock().unwrap();
                                 let mut detailed_logs_store = detailed_logs_store_ref.lock().unwrap();
 
+                                let current_number_of_logs = basic_logs_store.len();
+                                if current_number_of_logs == max_number_of_logs {
+                                    basic_logs_store.pop_front();
+                                }
                                 basic_logs_store.push_back(log_entry.clone());
-                                detailed_logs_store.put(log_entry.npid.parse::<u32>().unwrap(), serde_json::to_string(&log_entry).unwrap());
+                                detailed_logs_store.put(log_entry.npid.parse::<u32>().unwrap(), json_payload.to_string());
 
-                                publish_log_entry(&app_handle_ref.lock().unwrap(), &log_entry, &basic_logs_store);
+                                publish_log_entry(&app_handle_ref.lock().unwrap(), &log_entry);
 
 
                             })
@@ -57,9 +61,8 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store: &VecDequ
     });
 }
 
-fn publish_log_entry(app_handle: &AppHandle, log_entry: &BasicLogEntry, basic_logs_store: &VecDeque<BasicLogEntry>) {
+fn publish_log_entry(app_handle: &AppHandle, log_entry: &BasicLogEntry) {
     let _ = app_handle.emit("update",  log_entry);
-
 
 }
 
