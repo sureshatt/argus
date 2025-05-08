@@ -30,7 +30,7 @@ pub fn parse<'a>(
         });
 
         let _ = context.app_handle.emit(
-            "update",
+            "all_logs_event",
             udp_json,
         );
 

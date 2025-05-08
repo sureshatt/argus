@@ -38,7 +38,7 @@ pub fn handle(packet: &[u8], context: &Context) -> Result<(), String> {
             "payload": arp.payload().to_vec()
         });
 
-        let _ = context.app_handle.emit("update", arp_json);
+        let _ = context.app_handle.emit("all_logs_event", arp_json);
 
         Ok(())
     } else {

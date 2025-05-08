@@ -111,7 +111,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "payload": icmp_echo_reply.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             IcmpTypes::EchoRequest => {
                 let icmp_echo_request = EchoRequestPacket::new(icmp_packet.packet()).unwrap();
@@ -134,7 +134,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "payload": icmp_echo_request.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             IcmpTypes::DestinationUnreachable => {
                 let icmp_destination_unreachable =
@@ -158,7 +158,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "payload": icmp_destination_unreachable.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             IcmpTypes::TimeExceeded => {
                 let icmp_time_exceeded =
@@ -182,7 +182,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "payload": icmp_time_exceeded.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             _ => {
 
@@ -204,7 +204,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "payload": icmp_packet.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
         }
     } else {

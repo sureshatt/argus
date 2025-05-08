@@ -179,6 +179,7 @@ fetchNetworkInterfaces();
 
 function handleNetLogEvent(event: any) {
   const netlog = event.payload as Record<string, any>;
+  console.log('Netlog event:', netlog);
 
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable && typeof netlog === "object" && netlog !== null) {

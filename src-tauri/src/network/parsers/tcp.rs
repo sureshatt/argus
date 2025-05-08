@@ -45,7 +45,7 @@ pub fn parse<'a>(packet: &'a IpPacket, context: &'a Context) -> Result<TcpPacket
             "payload": tcp.payload().to_vec()
         });
 
-        let _ = context.app_handle.emit("update", tcp_json);
+        let _ = context.app_handle.emit("all_logs_event", tcp_json);
 
         Ok(tcp)
     } else {

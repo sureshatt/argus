@@ -33,7 +33,7 @@ pub fn parse<'a>(
             "payload": ipv6_packet.payload().to_vec()
         });
 
-        let _ = context.app_handle.emit("update", ipv6_json);
+        let _ = context.app_handle.emit("all_logs_event", ipv6_json);
 
         Ok(ipv6_packet)
     } else {

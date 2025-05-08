@@ -22,7 +22,7 @@ pub fn parse<'a>(packet: &'a [u8], context: &'a Context) -> Result<EthernetPacke
             "payload": ethernet.payload().to_vec()
         });
 
-        let _ = context.app_handle.emit("update", ethernet_json);
+        let _ = context.app_handle.emit("all_logs_event", ethernet_json);
 
         Ok(ethernet)
     } else {

@@ -1,8 +1,53 @@
 use std::collections::VecDeque;
-
 use serde_json::Value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct BasicLogEntry {
+    pub npid: String,
+    pub parent: String,
+    pub timestamp: String,
+    pub protocol: String,
+    pub source: String,
+    pub destination: String,
+    pub length: String,
+    pub info: String,
+    pub interface: String,
+    pub payload: Vec<u8>,
+}
+impl BasicLogEntry {
+    pub fn new(log_entry: &LogEntry) -> Self {
+        match log_entry {
+            LogEntry::ARP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::DNS { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::Ethernet { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::ICMP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::ICMPv6 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::IPv4 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::IPv6 { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::TCP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),
+            LogEntry::UDP { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload, .. } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),     
+            LogEntry::Other { npid, parent, timestamp, protocol, source, destination, length, info, interface, payload } => BasicLogEntry::from(npid, parent, timestamp, protocol, source, destination, length, info, interface, payload),   
+        }
+    }
+
+    pub fn from(npid: &str, parent: &str, timestamp: &str, protocol: &str, source: &str, destination: &str, length: &str, info: &str, interface: &str, payload: &[u8]) -> Self {
+        BasicLogEntry {
+            npid: npid.to_string(),
+            parent: parent.to_string(),
+            timestamp: timestamp.to_string(),
+            protocol: protocol.to_string(),
+            source: source.to_string(),
+            destination: destination.to_string(),
+            length: length.to_string(),
+            info: info.to_string(),
+            interface: interface.to_string(),
+            payload: payload.to_vec(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[allow(dead_code)]
 pub enum LogEntry {
     ARP {
         npid: String,
@@ -207,15 +252,10 @@ pub fn parse_log_entry(json: Value) -> Option<LogEntry> {
     let protocol = obj.get("protocol")?.as_str()?.to_string();
     let source = obj.get("source")?.as_str()?.to_string();
     let destination = obj.get("destination")?.as_str()?.to_string();
-    println!("destination: {}", destination);
     let length = obj.get("length")?.as_str()?.to_string();
-    println!("length: {}", length);
     let info = obj.get("info")?.as_str()?.to_string();
-    println!("info: {}", info);
     let interface = obj.get("interface")?.as_str()?.to_string();
-    println!("Interface: {}", interface);
     let payload = obj.get("payload")?.as_array()?.iter().map(|v| v.as_u64().map(|n| n as u8)).collect::<Option<Vec<u8>>>()?;
-   //let payload = Vec::new();
 
     println!("Parsing protocol: {}", protocol);
 

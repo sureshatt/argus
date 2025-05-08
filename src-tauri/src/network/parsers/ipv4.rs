@@ -55,7 +55,7 @@ pub fn parse<'a>(
             "payload": ipv4_packet.payload().to_vec()
         });
 
-        let _ = context.app_handle.emit("update", ipv4_json);
+        let _ = context.app_handle.emit("all_logs_event", ipv4_json);
 
         Ok(ipv4_packet)
     } else {

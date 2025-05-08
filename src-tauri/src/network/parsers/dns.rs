@@ -33,7 +33,7 @@ pub fn parse<'a>(packet: &'a TransportSegment, context: &'a Context) -> Result<(
                 "edns": dns_message.extensions().as_ref().map_or("None".to_string(), |edns| format!("{:?}", edns)),
             });
 
-            let _ = context.app_handle.emit("update", dns_json);
+            let _ = context.app_handle.emit("all_logs_event", dns_json);
 
             Ok(())
         }

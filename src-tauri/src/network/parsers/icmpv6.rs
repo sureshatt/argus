@@ -174,7 +174,7 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
                     "payload": icmpv6_echo_reply.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             Icmpv6Types::EchoRequest => {
                 let icmpv6_echo_request = EchoRequestPacket::new(icmpv6_packet.packet()).unwrap();
@@ -197,7 +197,7 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
                     "payload": icmpv6_echo_request.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             _ => {
 
@@ -219,7 +219,7 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
                     "payload": icmpv6_packet.payload().to_vec()
                 });
 
-                let _ = context.app_handle.emit("update", icmp_json);
+                let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
         }
     } else {
