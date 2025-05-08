@@ -23,6 +23,7 @@ pub fn parse<'a>(packet: &'a TransportSegment, context: &'a Context) -> Result<(
                 "length": packet.get_payload().len().to_string(),
                 "info": format!("{}({})", dns_message.message_type().to_string(), dns_message.op_code().to_string()),
                 "interface": context.interface.name.to_string(),
+                "payload": packet.get_payload().to_vec(),
                 "header": dns_message.header().to_string(),
                 "queries": dns_message.queries().iter().map(|q| q.to_string()).collect::<Vec<_>>(),
                 "answers": dns_message.answers().iter().map(|a| a.to_string()).collect::<Vec<_>>(),
