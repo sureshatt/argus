@@ -7,7 +7,7 @@ use network::network_interface::{get_net_ifaces, NetIface};
 use std::collections::VecDeque;
 use std::num::NonZero;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use tauri::State;
 
 #[derive(Clone)]
@@ -52,8 +52,11 @@ impl Counter {
 pub async fn run() {
     let sq_counter = Counter::new();
     let max_number_of_logs = 1000;
+
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
+    let basic_logs_store_arc: Arc<Mutex<VecDeque<BasicLogEntry>>> = Arc::new(Mutex::new(basic_logs_store));
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
+    let detailed_logs_store_arc: Arc<Mutex<LruCache<u32, String>>> = Arc::new(Mutex::new(detailed_logs_store));
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
@@ -70,7 +73,7 @@ pub async fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            listen_to_event(&app_handle, &basic_logs_store, &detailed_logs_store, max_number_of_logs);
+            listen_to_event(&app_handle, basic_logs_store_arc, detailed_logs_store_arc, max_number_of_logs);
             Ok(())
         })
         .run(tauri::generate_context!())

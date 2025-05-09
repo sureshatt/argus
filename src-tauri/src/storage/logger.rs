@@ -1,28 +1,27 @@
 
 use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
+use lru::LruCache;
 use tauri::{AppHandle, Emitter, Listener};
 use crate::storage::log_entry::BasicLogEntry;
 
 
-pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &lru::LruCache<u32, String>, max_number_of_logs: usize) {
+pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<Mutex<VecDeque<BasicLogEntry>>>, detailed_logs_store_arc: Arc<Mutex<LruCache<u32, String>>>, max_number_of_logs: usize) {
 
     println!("Listening to events...");
 
-    let basic_logs_store_ref = std::sync::Arc::new(std::sync::Mutex::new(basic_logs_store.clone()));
-    let detailed_logs_store_ref = std::sync::Arc::new(std::sync::Mutex::new(detailed_logs_store.clone()));
-    let app_handle_ref = std::sync::Arc::new(std::sync::Mutex::new(app_handle.clone()));
+    let app_handle_ref = Arc::new(Mutex::new(app_handle.clone()));
     
     app_handle.listen("all_logs_event", {
 
-        let basic_logs_store_ref = std::sync::Arc::clone(&basic_logs_store_ref);
-        let detailed_logs_store_ref = std::sync::Arc::clone(&detailed_logs_store_ref);
-
+        let basic_logs_store_ref_0 = Arc::clone(&basic_logs_store_arc);
+        let detailed_logs_store_ref_0 = Arc::clone(&detailed_logs_store_arc);
 
         move |event| {
 
-            let basic_logs_store_ref = std::sync::Arc::clone(&basic_logs_store_ref);
-            let detailed_logs_store_ref = std::sync::Arc::clone(&detailed_logs_store_ref);
-            let app_handle_ref = std::sync::Arc::clone(&app_handle_ref);
+            let basic_logs_store_ref = Arc::clone(&basic_logs_store_ref_0);
+            let detailed_logs_store_ref = Arc::clone(&detailed_logs_store_ref_0);
+            let app_handle_ref = Arc::clone(&app_handle_ref);
 
             tauri::async_runtime::spawn(async move {
 
