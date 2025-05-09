@@ -7,7 +7,7 @@ use network::network_interface::{get_net_ifaces, NetIface};
 use std::collections::VecDeque;
 use std::num::NonZero;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 use tauri::State;
 
 #[derive(Clone)]
@@ -54,9 +54,9 @@ pub async fn run() {
     let max_number_of_logs = 1000;
 
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
-    let basic_logs_store_arc: Arc<Mutex<VecDeque<BasicLogEntry>>> = Arc::new(Mutex::new(basic_logs_store));
+    let basic_logs_store_arc: Arc<RwLock<VecDeque<BasicLogEntry>>> = Arc::new(RwLock::new(basic_logs_store));
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
-    let detailed_logs_store_arc: Arc<Mutex<LruCache<u32, String>>> = Arc::new(Mutex::new(detailed_logs_store));
+    let detailed_logs_store_arc: Arc<RwLock<LruCache<u32, String>>> = Arc::new(RwLock::new(detailed_logs_store));
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),

@@ -1,12 +1,12 @@
 
-use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, Mutex, RwLock};
 use lru::LruCache;
 use tauri::{AppHandle, Emitter, Listener};
 use crate::storage::log_entry::BasicLogEntry;
 
 
-pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<Mutex<VecDeque<BasicLogEntry>>>, detailed_logs_store_arc: Arc<Mutex<LruCache<u32, String>>>, max_number_of_logs: usize) {
+pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<RwLock<VecDeque<BasicLogEntry>>>, detailed_logs_store_arc: Arc<RwLock<LruCache<u32, String>>>, max_number_of_logs: usize) {
 
     println!("Listening to events...");
 
@@ -31,8 +31,8 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<
                        BasicLogEntry::try_from(json_payload.clone())
                             .map(|log_entry| {
 
-                                let mut basic_logs_store = basic_logs_store_ref.lock().unwrap();
-                                let mut detailed_logs_store = detailed_logs_store_ref.lock().unwrap();
+                                let mut basic_logs_store = basic_logs_store_ref.write().unwrap();
+                                let mut detailed_logs_store = detailed_logs_store_ref.write().unwrap();
 
                                 let current_number_of_logs = basic_logs_store.len();
                                 if current_number_of_logs == max_number_of_logs {
@@ -42,6 +42,8 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<
                                 detailed_logs_store.put(log_entry.npid.parse::<u32>().unwrap(), json_payload.to_string());
 
                                 publish_log_entry(&app_handle_ref.lock().unwrap(), &log_entry);
+                                
+                                get_protocol_stats(&basic_logs_store);
 
 
                             })
@@ -60,8 +62,29 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: Arc<
     });
 }
 
+
 fn publish_log_entry(app_handle: &AppHandle, log_entry: &BasicLogEntry) {
     let _ = app_handle.emit("update",  log_entry);
 
 }
+
+
+fn get_protocol_stats(basic_logs_store: &VecDeque<BasicLogEntry>) {
+    println!("Getting protocol stats...");
+
+    if basic_logs_store.is_empty() {
+        println!("No logs available.");
+        return;
+    }
+
+    let mut protocol_stats: HashMap<String, usize> = HashMap::new();
+
+    for log_entry in basic_logs_store.iter() {
+        let protocol = log_entry.protocol.clone();
+        *protocol_stats.entry(protocol).or_insert(0) += 1;
+    }
+
+    println!("Protocol stats: {:?}", protocol_stats);
+}
+
 
