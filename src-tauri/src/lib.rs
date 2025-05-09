@@ -3,6 +3,7 @@ mod storage;
 use lru::LruCache;
 use storage::log_entry::BasicLogEntry;
 use storage::logger::listen_to_event;
+use storage::log_analytics::publish_stats;
 use network::network_interface::{get_net_ifaces, NetIface};
 use std::collections::VecDeque;
 use std::num::NonZero;
@@ -73,7 +74,8 @@ pub async fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            listen_to_event(&app_handle, basic_logs_store_arc, detailed_logs_store_arc, max_number_of_logs);
+            listen_to_event(&app_handle, &basic_logs_store_arc, &detailed_logs_store_arc, max_number_of_logs);
+            publish_stats(&app_handle, &basic_logs_store_arc, &detailed_logs_store_arc);
             Ok(())
         })
         .run(tauri::generate_context!())
