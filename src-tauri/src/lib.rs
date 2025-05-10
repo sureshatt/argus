@@ -57,15 +57,13 @@ pub async fn run() {
     let max_number_of_logs = 1000;
 
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
-    let basic_logs_store_arc: Arc<RwLock<VecDeque<BasicLogEntry>>> = Arc::new(RwLock::new(basic_logs_store));
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
-    let detailed_logs_store_arc: Arc<RwLock<LruCache<u32, String>>> = Arc::new(RwLock::new(detailed_logs_store));
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
         counter: Arc::new(RwLock::new(sq_counter)),
-        basic_logs_store: basic_logs_store_arc,
-        detailed_logs_store: detailed_logs_store_arc,
+        basic_logs_store: Arc::new(RwLock::new(basic_logs_store)),
+        detailed_logs_store: Arc::new(RwLock::new(detailed_logs_store)),
     };
 
     tauri::Builder::default()
