@@ -1,6 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex},
+    collections::{HashMap, VecDeque}, sync::{Arc, Mutex}
 };
 use lru::LruCache;
 use tauri::{AppHandle, Emitter, Listener, State};
@@ -105,4 +104,21 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
 
     println!("basic_logs_store length: {}", basic_logs_store.len());
     println!("detailed_logs_store length: {}", detailed_logs_store.len());
+}
+
+#[tauri::command]
+pub(crate) fn get_packet_data(state: State<AppState>, npid: String) -> Result<Vec<serde_json::Value>, String> {
+    
+    let npid_s = npid.parse::<u32>().unwrap();
+    let detailed_logs_store = state.detailed_logs_store.read().unwrap();
+
+    if let Some(json_str) = detailed_logs_store.peek(&npid_s) {
+        let json_value: serde_json::Value = serde_json::from_str(json_str).unwrap();
+        let mut packet_data = Vec::new();
+        packet_data.push(json_value.clone());
+        Ok(packet_data)
+
+    } else {
+        return Err("No detailed log found".to_string());
+    }
 }

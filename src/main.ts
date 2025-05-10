@@ -61,6 +61,7 @@ async function handlePacketRowSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.parentNode) {
     const parentId = (target.parentNode as HTMLElement).getAttribute("data-parent");
+    const npid = (target.parentNode as HTMLElement).id;
     console.log('Packet row selected with parent:', parentId);
 
     const parentDiv = document.getElementById('right-section') as HTMLTableElement;
@@ -86,7 +87,7 @@ async function handlePacketRowSelect(event: Event) {
     selectedPacketDiv.appendChild(table);
 
     try {
-      const data: Array<any> = await invoke('get_packet_data', { parentId: parentId, netIface: selected_netIface.name });
+      const data: Array<any> = await invoke('get_packet_data', {npid: npid});
       console.log('Packet data:', data);
 
       data.forEach((item) => {

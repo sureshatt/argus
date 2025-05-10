@@ -3,8 +3,9 @@ mod storage;
 use lru::LruCache;
 use storage::log_entry::BasicLogEntry;
 use storage::logger::listen_to_event;
-use storage::log_analytics::publish_stats;
+use storage::log_analytics::{publish_stats, get_packet_data};
 use network::network_interface::{get_net_ifaces, NetIface};
+use network::network_dumper::dump;
 use std::collections::VecDeque;
 use std::num::NonZero;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -72,7 +73,8 @@ pub async fn run() {
         .invoke_handler(tauri::generate_handler![
             get_network_interfaces,
             set_selection,
-            network::network_dumper::dump
+            get_packet_data,
+            dump
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
