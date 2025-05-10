@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, VecDeque}, sync::{Arc, Mutex}
 };
 use lru::LruCache;
+use serde_json::json;
 use tauri::{AppHandle, Emitter, Listener, State};
 use crate::AppState;
 
@@ -33,14 +34,12 @@ pub(crate) fn publish_stats(
                 let detailed_logs_store = detailed_logs_store_ref.read().unwrap();
                 let app_handle = app_handle_ref.lock().unwrap();
                 
-                get_stats(&basic_logs_store, &detailed_logs_store);
+                let stats = get_stats(&basic_logs_store, &detailed_logs_store);
+                println!("Stats: {:?}", stats);
 
                 app_handle.emit(
                     "stats",
-                    serde_json::json!({
-                        "basic_logs": basic_logs_store.len(),
-                        "detailed_logs": detailed_logs_store.len(),
-                    }),
+                    stats,
                 ).unwrap();
                 
             });
@@ -49,18 +48,23 @@ pub(crate) fn publish_stats(
 }
 
 
-fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>) {
+fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>) -> serde_json::Value {
     println!("Getting stats...");
 
     if basic_logs_store.is_empty() {
         println!("No logs available.");
-        return;
+         return json!({
+            "protocol_stats": {},
+            "local_devices_list": {},
+            "top_source_ip_counts": [],
+            "top_destination_ip_counts": []
+        });
     }
 
     let mut protocol_stats: HashMap<String, usize> = HashMap::new();
     let mut source_ip_count_map: HashMap<String, usize> = HashMap::new();
     let mut destination_ip_count_map: HashMap<String, usize> = HashMap::new();
-    let mut local_devices_list: HashMap<String, String> = HashMap::new();
+    let mut local_devices: HashMap<String, String> = HashMap::new();
 
     for log_entry in basic_logs_store.iter() {
 
@@ -82,7 +86,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
                 let source_mac = json_value["sender_hw_addr"].as_str().unwrap_or("");
                 let source_ip = json_value["sender_proto_addr"].as_str().unwrap_or("");
 
-                local_devices_list.insert(source_ip.to_string(), source_mac.to_string());
+                local_devices.insert(source_ip.to_string(), source_mac.to_string());
             }
 
         }
@@ -90,20 +94,25 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
 
     let mut source_ip_counts: Vec<_> = source_ip_count_map.into_iter().collect();
     source_ip_counts.sort_by(|a, b| b.1.cmp(&a.1));
-    let top_source_ip_counts: Vec<(String, usize)> = source_ip_counts.into_iter().take(10).collect();
+    let top_source_ip_counts: HashMap<String, usize> = source_ip_counts
+    .into_iter()
+    .take(10)
+    .collect();
 
     let mut destination_ip_counts: Vec<_> = destination_ip_count_map.into_iter().collect();
     destination_ip_counts.sort_by(|a, b| b.1.cmp(&a.1));
-    let top_destination_ip_counts: Vec<(String, usize)> = destination_ip_counts.into_iter().take(10).collect();
+    let top_destination_ip_counts: HashMap<String, usize> = destination_ip_counts
+    .into_iter()
+    .take(10)
+    .collect();
 
 
-    println!("Protocol stats: {:?}", protocol_stats);
-    println!("Source count map: {:?}", top_source_ip_counts);
-    println!("Destination count map: {:?}", top_destination_ip_counts);
-    println!("Local devices list: {:?}", local_devices_list);
-
-    println!("basic_logs_store length: {}", basic_logs_store.len());
-    println!("detailed_logs_store length: {}", detailed_logs_store.len());
+    json!({
+        "protocol_stats": protocol_stats,
+        "local_devices_list": local_devices,
+        "top_source_ip_counts": top_source_ip_counts,
+        "top_destination_ip_counts": top_destination_ip_counts,
+    })
 }
 
 #[tauri::command]
