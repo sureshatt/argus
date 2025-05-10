@@ -2,13 +2,10 @@ use std::{
     collections::{HashMap, VecDeque},
     sync::{Arc, Mutex, RwLock},
 };
-
 use lru::LruCache;
 use tauri::{AppHandle, Emitter, Listener};
-
 use super::log_entry::BasicLogEntry;
-use super::mac_lookup::lookup_vendor;
-use super::mac_lookup::guess_device_type;
+
 
 pub(crate) fn publish_stats(
     app_handle: &AppHandle,
@@ -34,7 +31,7 @@ pub(crate) fn publish_stats(
                 let detailed_logs_store = detailed_logs_store_ref.read().unwrap();
                 let app_handle = app_handle_ref.lock().unwrap();
                 
-                get_stats(&basic_logs_store);
+                get_stats(&basic_logs_store, &detailed_logs_store);
 
                 app_handle.emit(
                     "stats",
@@ -50,7 +47,7 @@ pub(crate) fn publish_stats(
 }
 
 
-fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>) {
+fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>) {
     println!("Getting stats...");
 
     if basic_logs_store.is_empty() {
@@ -61,6 +58,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>) {
     let mut protocol_stats: HashMap<String, usize> = HashMap::new();
     let mut source_ip_count_map: HashMap<String, usize> = HashMap::new();
     let mut destination_ip_count_map: HashMap<String, usize> = HashMap::new();
+    let mut local_devices_list: HashMap<String, String> = HashMap::new();
 
     for log_entry in basic_logs_store.iter() {
 
@@ -76,7 +74,15 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>) {
         }
 
         if protocol == "ARP" {
-            // Handle ARP protocol separately
+            let npid = log_entry.npid.parse::<u32>();
+            if let Some(json_str) = detailed_logs_store.peek(&npid.unwrap()) {
+                let json_value: serde_json::Value = serde_json::from_str(json_str).unwrap();
+                let source_mac = json_value["sender_hw_addr"].as_str().unwrap_or("");
+                let source_ip = json_value["sender_proto_addr"].as_str().unwrap_or("");
+
+                local_devices_list.insert(source_ip.to_string(), source_mac.to_string());
+            }
+
         }
     }
 
@@ -92,4 +98,8 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>) {
     println!("Protocol stats: {:?}", protocol_stats);
     println!("Source count map: {:?}", top_source_ip_counts);
     println!("Destination count map: {:?}", top_destination_ip_counts);
+    println!("Local devices list: {:?}", local_devices_list);
+
+    println!("basic_logs_store length: {}", basic_logs_store.len());
+    println!("detailed_logs_store length: {}", detailed_logs_store.len());
 }
