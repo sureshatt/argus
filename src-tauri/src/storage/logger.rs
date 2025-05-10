@@ -1,5 +1,5 @@
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, RwLock};
 use lru::LruCache;
 use tauri::{AppHandle, Emitter, Listener};
