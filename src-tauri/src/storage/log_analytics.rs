@@ -1,21 +1,24 @@
 use std::{
     collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
 };
 use lru::LruCache;
-use tauri::{AppHandle, Emitter, Listener};
+use tauri::{AppHandle, Emitter, Listener, State};
+use crate::AppState;
+
 use super::log_entry::BasicLogEntry;
 
 
 pub(crate) fn publish_stats(
     app_handle: &AppHandle,
-    basic_logs_store_arc: &Arc<RwLock<VecDeque<BasicLogEntry>>>,
-    detailed_logs_store_arc: &Arc<RwLock<LruCache<u32, String>>>,
+    state: State<AppState>,
 ) {
     
     println!("Listening to publish_stats events...");
 
     let app_handle_ref = Arc::new(Mutex::new(app_handle.clone()));
+    let basic_logs_store_arc = Arc::clone(&state.basic_logs_store);
+    let detailed_logs_store_arc = Arc::clone(&state.detailed_logs_store);
 
     app_handle.listen("publish_stats", {
         let basic_logs_store_ref_0 = Arc::clone(&basic_logs_store_arc);

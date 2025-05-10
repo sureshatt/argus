@@ -9,12 +9,14 @@ use std::collections::VecDeque;
 use std::num::NonZero;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
-use tauri::State;
+use tauri::{Manager, State};
 
 #[derive(Clone)]
 struct AppState {
     selected: Arc<RwLock<String>>,
     counter: Arc<RwLock<Counter>>,
+    basic_logs_store: Arc<RwLock<VecDeque<BasicLogEntry>>>,
+    detailed_logs_store: Arc<RwLock<LruCache<u32, String>>>,
 }
 
 #[tauri::command]
@@ -62,6 +64,8 @@ pub async fn run() {
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
         counter: Arc::new(RwLock::new(sq_counter)),
+        basic_logs_store: basic_logs_store_arc,
+        detailed_logs_store: detailed_logs_store_arc,
     };
 
     tauri::Builder::default()
@@ -74,8 +78,8 @@ pub async fn run() {
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
-            listen_to_event(&app_handle, &basic_logs_store_arc, &detailed_logs_store_arc, max_number_of_logs);
-            publish_stats(&app_handle, &basic_logs_store_arc, &detailed_logs_store_arc);
+            listen_to_event(&app_handle, app.state::<AppState>(), max_number_of_logs);
+            publish_stats(&app_handle, app.state::<AppState>());
             Ok(())
         })
         .run(tauri::generate_context!())

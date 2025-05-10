@@ -1,16 +1,17 @@
 
-use std::collections::VecDeque;
-use std::sync::{Arc, Mutex, RwLock};
-use lru::LruCache;
-use tauri::{AppHandle, Emitter, Listener};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, Listener, State};
 use crate::storage::log_entry::BasicLogEntry;
+use crate::AppState;
 
 
-pub(crate) fn listen_to_event(app_handle: &AppHandle, basic_logs_store_arc: &Arc<RwLock<VecDeque<BasicLogEntry>>>, detailed_logs_store_arc: &Arc<RwLock<LruCache<u32, String>>>, max_number_of_logs: usize) {
+pub(crate) fn listen_to_event(app_handle: &AppHandle, state: State<AppState>, max_number_of_logs: usize) {
 
     println!("Listening to log events...");
 
     let app_handle_ref = Arc::new(Mutex::new(app_handle.clone()));
+    let basic_logs_store_arc = Arc::clone(&state.basic_logs_store);
+    let detailed_logs_store_arc = Arc::clone(&state.detailed_logs_store);
     
     app_handle.listen("all_logs_event", {
 
