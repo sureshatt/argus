@@ -1,109 +1,20 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tauri + React + Typescript</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="stylesheet" href="/src/styles.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tauri App</title>
-  <script type="module" src="/src/main.ts" defer></script>
-</head>
-
-<body>
-  <div class="container">
-    <div class="left-section">
-      <div class="row" id="row1">
-        <table id="interfacesTable" class="interfaces-table">
-          <thead>
-            <tr>
-              <th>Select</th>
-              <th>Interface</th>
-              <th>MAC</th>
-              <th>IPv4</th>
-              <th>IPv6</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-      <div class="row" id="row2">
-        <table id="statsTable" class="interfaces-table">
-          <thead>
-            <tr>
-              <th>Protocol</th>
-              <th>Count</th>
-            </tr>
-          </thead>
-          <tbody id="statsTableBody">
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-      <div class="row" id="row3">
-        <table id="ingressIpStatsTable" class="interfaces-table">
-          <thead>
-            <tr>
-              <th>Incomming IPs</th>
-              <th>Count</th>
-            </tr>
-          </thead>
-          <tbody id="ingressIpStatsTableBody">
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-      <div class="row" id="row4">
-        <table id="egressIpStatsTable" class="interfaces-table">
-          <thead>
-            <tr>
-              <th>Outgoing IP</th>
-              <th>Count</th>
-            </tr>
-          </thead>
-          <tbody id="egressIpStatsTableBody">
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-      <div class="row" id="row5">
-        <table id="arpIpStatsTable" class="interfaces-table">
-          <thead>
-            <tr>
-              <th>Local Network IPs</th>
-            </tr>
-          </thead>
-          <tbody id="arpIpStatsTableBody">
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="right-section" id="right-section">
-      <div class="row" id="packet-logs">
-        <div class="table-container">
-        <table id="filterTable">
-          <thead id="filterTableHead">
-            <tr>
-              <th>Id<br><input type="text" onkeyup="filterColumn(0)" placeholder="Filter ..."></th>
-              <th>Timestamp<br><input type="text" onkeyup="filterColumn(1)" placeholder="Filter ..."></th>
-              <th>Protocol<br><input type="text" onkeyup="filterColumn(2)" placeholder="Filter ..."></th>
-              <th>Source<br><input type="text" onkeyup="filterColumn(3)" placeholder="Filter ..."></th>
-              <th>Destination<br><input type="text" onkeyup="filterColumn(4)" placeholder="Filter ..."></th>
-              <th>Length<br><input type="text" onkeyup="filterColumn(5)" placeholder="Filter ..."></th>
-              <th>Info<br><input type="text" onkeyup="filterColumn(6)" placeholder="Filter ..."></th>
-            </tr>
-          </thead>
-          <tbody id="filterTableBody">
-            <!-- Rows will be dynamically generated -->
-          </tbody>
-        </table>
-      </div>
-      </div>
-    </div>
-  </div>
-
-</body>
-
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

@@ -46,11 +46,11 @@ async function handleRowSelectChange(event: Event) {
   }
 
   const target = event.target as HTMLInputElement;
-  console.log('Row selected:', target.dataset.value);
+  //console.log('Row selected:', target.dataset.value);
 
   selected_netIface = JSON.parse(target?.dataset.value || "{}") as NetIface;
-  console.log('Selected interface:', selected_netIface);
-  
+  //console.log('Selected interface:', selected_netIface);
+
   invoke("set_selection", { selection: target.value });
   invoke("dump", { selection: target.value });
   await handleNetLogStats();
@@ -61,12 +61,11 @@ async function handlePacketRowSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.parentNode) {
     const parentId = (target.parentNode as HTMLElement).getAttribute("data-parent");
-    const npid = (target.parentNode as HTMLElement).id;
-    console.log('Packet row selected with parent:', parentId);
+    //console.log('Packet row selected with parent:', parentId);
 
     const parentDiv = document.getElementById('right-section') as HTMLTableElement;
     if (!parentDiv) {
-      console.error("Parent div 'right-section' not found.");
+      //console.error("Parent div 'right-section' not found.");
       return;
     }
 
@@ -87,8 +86,8 @@ async function handlePacketRowSelect(event: Event) {
     selectedPacketDiv.appendChild(table);
 
     try {
-      const data: Array<any> = await invoke('get_packet_data', {npid: npid});
-      console.log('Packet data:', data);
+      const data: Array<any> = await invoke('get_packet_data', { parentId: parentId, netIface: selected_netIface.name });
+      //console.log('Packet data:', data);
 
       data.forEach((item) => {
         const row = document.createElement("tr");
@@ -111,7 +110,7 @@ async function handlePacketRowSelect(event: Event) {
         tbody.appendChild(row);
       });
     } catch (error) {
-      console.error("Error fetching packet data:", error);
+      //console.error("Error fetching packet data:", error);
     }
   }
 }
@@ -147,7 +146,7 @@ async function fetchNetworkInterfaces() {
     const tbody = document.querySelector('#interfacesTable tbody');
 
     if (tbody == null) {
-      console.error("could not find interfacesTable");
+      //console.error("could not find interfacesTable");
       return;
     }
 
@@ -155,10 +154,10 @@ async function fetchNetworkInterfaces() {
 
     // handling network interfaces table
     const interfaces: NetIface[] = await invoke('get_network_interfaces');
-    console.log('Network Interfaces:', interfaces);
+    //console.log('Network Interfaces:', interfaces);
 
     interfaces.forEach(iface => {
-      console.log('iface:', iface);
+      //console.log('iface:', iface);
       const tr = document.createElement('tr');
       tr.innerHTML = `
           <td><input type="radio" name="rowSelect" value="${iface.name}" data-value='${JSON.stringify(iface)}'></td>
@@ -172,7 +171,7 @@ async function fetchNetworkInterfaces() {
     });
 
   } catch (error) {
-    console.error('Error fetching network interfaces:', error);
+    //console.error('Error fetching network interfaces:', error);
   }
 }
 
@@ -180,7 +179,6 @@ fetchNetworkInterfaces();
 
 function handleNetLogEvent(event: any) {
   const netlog = event.payload as Record<string, any>;
-  console.log('Netlog event:', netlog);
 
   const filterTable = document.getElementById("filterTableBody");
   if (filterTable && typeof netlog === "object" && netlog !== null) {
@@ -214,7 +212,7 @@ async function handleNetLogStats() {
   const tbody = document.querySelector('#statsTable tbody');
 
   if (!tbody) {
-    console.error("Stats table not found.");
+    //console.error("Stats table not found.");
     return;
   }
 
@@ -227,9 +225,9 @@ async function handleNetLogStats() {
 
     // Styling to maintain formatting
     cell1.style.fontFamily = "monospace";
-    cell1.style.whiteSpace = "pre-wrap"; 
+    cell1.style.whiteSpace = "pre-wrap";
     cell2.style.fontFamily = "monospace";
-    cell2.style.whiteSpace = "pre-wrap"; 
+    cell2.style.whiteSpace = "pre-wrap";
 
     cell1.innerHTML = item.protocol;
     cell2.innerHTML = item.count;
@@ -243,12 +241,12 @@ async function handleNetLogStats() {
 
 async function handleIngressIpStats() {
   const data: Array<any> = await invoke('get_ingress_ip_stats', { netiface: selected_netIface });
-  console.log('Ingress IP Stats:', data);
+  //console.log('Ingress IP Stats:', data);
 
   const tbody = document.querySelector('#ingressIpStatsTable tbody');
 
   if (!tbody) {
-    console.error("ingress IP Stats table not found.");
+    //console.error("ingress IP Stats table not found.");
     return;
   }
 
@@ -261,11 +259,79 @@ async function handleIngressIpStats() {
 
     // Styling to maintain formatting
     cell1.style.fontFamily = "monospace";
-    cell1.style.whiteSpace = "pre-wrap"; 
+    cell1.style.whiteSpace = "pre-wrap";
     cell2.style.fontFamily = "monospace";
-    cell2.style.whiteSpace = "pre-wrap"; 
+    cell2.style.whiteSpace = "pre-wrap";
 
-    cell1.innerHTML = item.source;
+    cell1.innerHTML = item.ip;
+    cell2.innerHTML = item.count;
+
+
+    row.appendChild(cell1);
+    row.appendChild(cell2);
+    tbody.appendChild(row);
+  });
+}
+
+async function handleIngressCountryStats() {
+  const data: Array<any> = await invoke('get_ingress_country_stats', { netiface: selected_netIface });
+  //console.log('Ingress Country Stats:', data);
+
+  const tbody = document.querySelector('#ingressCountryStatsTable tbody');
+
+  if (!tbody) {
+    //console.error("ingress Country Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+    const cell2 = document.createElement("td");
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap";
+    cell2.style.fontFamily = "monospace";
+    cell2.style.whiteSpace = "pre-wrap";
+
+    cell1.innerHTML = item.country;
+    cell2.innerHTML = item.count;
+
+
+    row.appendChild(cell1);
+    row.appendChild(cell2);
+    tbody.appendChild(row);
+  });
+}
+
+async function handleEgressCountryStats() {
+  const data: Array<any> = await invoke('get_egress_country_stats', { netiface: selected_netIface });
+  //console.log('Ingress Country Stats:', data);
+
+  const tbody = document.querySelector('#egressCountryStatsTable tbody');
+
+  if (!tbody) {
+    //console.error("egress Country Stats table not found.");
+    return;
+  }
+
+  tbody.innerHTML = ''; // Clear previous rows
+
+  data.forEach((item) => {
+    const row = document.createElement("tr");
+    const cell1 = document.createElement("td");
+    const cell2 = document.createElement("td");
+
+    // Styling to maintain formatting
+    cell1.style.fontFamily = "monospace";
+    cell1.style.whiteSpace = "pre-wrap";
+    cell2.style.fontFamily = "monospace";
+    cell2.style.whiteSpace = "pre-wrap";
+
+    cell1.innerHTML = item.country;
     cell2.innerHTML = item.count;
 
 
@@ -277,12 +343,12 @@ async function handleIngressIpStats() {
 
 async function handleEgressIpStats() {
   const data: Array<any> = await invoke('get_egress_ip_stats', { netiface: selected_netIface });
-  console.log('Ingress IP Stats:', data);
+  //console.log('Ingress IP Stats:', data);
 
   const tbody = document.querySelector('#egressIpStatsTable tbody');
 
   if (!tbody) {
-    console.error("ingress IP Stats table not found.");
+    //console.error("ingress IP Stats table not found.");
     return;
   }
 
@@ -295,11 +361,11 @@ async function handleEgressIpStats() {
 
     // Styling to maintain formatting
     cell1.style.fontFamily = "monospace";
-    cell1.style.whiteSpace = "pre-wrap"; 
+    cell1.style.whiteSpace = "pre-wrap";
     cell2.style.fontFamily = "monospace";
-    cell2.style.whiteSpace = "pre-wrap"; 
+    cell2.style.whiteSpace = "pre-wrap";
 
-    cell1.innerHTML = item.destination;
+    cell1.innerHTML = item.ip;
     cell2.innerHTML = item.count;
 
 
@@ -311,12 +377,12 @@ async function handleEgressIpStats() {
 
 async function handleArpIpStats() {
   const data: Array<any> = await invoke('get_arp_ip_stats', { netiface: selected_netIface });
-  console.log('ARP IP Stats:', data);
+  //console.log('ARP IP Stats:', data);
 
   const tbody = document.querySelector('#arpIpStatsTable tbody');
 
   if (!tbody) {
-    console.error("ARP IP Stats table not found.");
+    //console.error("ARP IP Stats table not found.");
     return;
   }
 
@@ -328,7 +394,7 @@ async function handleArpIpStats() {
 
     // Styling to maintain formatting
     cell1.style.fontFamily = "monospace";
-    cell1.style.whiteSpace = "pre-wrap"; 
+    cell1.style.whiteSpace = "pre-wrap";
 
     cell1.innerHTML = item.sender_proto_addr + " (" + item.sender_hw_addr + ") ";
 
@@ -346,4 +412,5 @@ setInterval(handleNetLogStats, 5000);
 setInterval(handleIngressIpStats, 5000);
 setInterval(handleEgressIpStats, 5000);
 setInterval(handleArpIpStats, 5000);
-
+setInterval(handleIngressCountryStats, 5000);
+setInterval(handleEgressCountryStats, 5000);

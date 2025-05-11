@@ -1,0 +1,218 @@
+import { useEffect, useState } from "react";
+import Card from "../../components/card/Card";
+import CardBody from "../../components/card/CardBody";
+import CardHeader from "../../components/card/CardHeader";
+import CardTitle from "../../components/card/CardTitle";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { Network } from "../../services/network";
+import { useNetStore } from "../../stores/net.store";
+import { BarCharData, IPTraffic } from "../../types";
+import Alert from "../../components/alert/Alert";
+import { errors } from "../../errors";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export const options = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: "y" as any,
+  scales: {
+    x: {
+      grid: {
+        display: false, // Change X-axis grid color
+      },
+      ticks: {
+        color: "#3AE7FF", // Change x-axis label color
+      },
+    },
+    y: {
+      grid: {
+        color: "rgba(255,255,255,0.15)", // Change Y-axis grid color
+      },
+      ticks: {
+        autoSkip: false,
+        color: "#A2BEB8", // Change y-axis label color
+        font: {
+          size: 8, // Set the font size here
+        },
+      },
+    },
+  },
+  plugins: {
+    legend: {
+      display: false,
+      position: "top" as const,
+    },
+    title: {
+      display: false,
+    },
+  },
+};
+
+// const labels = ["Eth", "TCP", "IPv4", "UDP", "ARP"];
+
+// const data =
+
+// const shadowPlugin = {
+//   id: "shadowPlugin",
+//   beforeDatasetsDraw(chart: any) {
+//     const { ctx } = chart;
+//     ctx.save();
+
+//     chart.data.datasets.forEach((dataset: any, i: number) => {
+//       chart.getDatasetMeta(i).data.forEach((bar: any) => {
+//         ctx.shadowColor = "#3AE7FF36"; // Shadow color
+//         ctx.shadowBlur = 11; // Blur intensity
+//         ctx.shadowOffsetX = 0;
+//         ctx.shadowOffsetY = 4;
+//         ctx.fillRect(
+//           bar.x - bar.width / 2,
+//           bar.y + 10,
+//           bar.width,
+//           bar.height - 10
+//         );
+//         ctx.shadowColor = "#00000019"; // Shadow color
+//         ctx.shadowBlur = 4; // Blur intensity
+//         ctx.shadowOffsetX = 17;
+//         ctx.shadowOffsetY = 9;
+//         ctx.fillRect(
+//           bar.x - bar.width / 2,
+//           bar.y + 10,
+//           bar.width,
+//           bar.height - 10
+//         );
+//       });
+//     });
+
+//     ctx.restore();
+//   },
+// };
+
+function MostTrafficIps() {
+  const [data, setData] = useState<BarCharData>({
+    labels: [],
+    datasets: [
+      {
+        label: "Most Traffic",
+        data: [],
+        backgroundColor: "#3AE7FF",
+        borderRadius: { bottomRight: 10, topRight: 10 },
+        barThickness: 30,
+      },
+    ],
+  });
+
+  const [show, setShow] = useState(false);
+
+  const selInterface = useNetStore((state) => state.currentInterface);
+
+  const generateDataset = (d: IPTraffic[], label: "in" | "out") => {
+    const labels: string[] = [];
+    const data: number[] = [];
+    const colors: string[] = [];
+
+    d.map((s) => {
+      labels.push(s.ip);
+      data.push(s.count);
+      colors.push(label == "in" ? "#3AE7FF" : "#3A4AFF");
+    });
+
+    return { labels, data, colors };
+  };
+
+  const handleDataChange = (incoming: IPTraffic[], outcoming: IPTraffic[]) => {
+    const ingress = generateDataset(incoming, "in");
+    const egress = generateDataset(outcoming, "out");
+
+    //console.log("ingress", ingress, "egress", egress);
+
+    const labels = [...ingress.labels, ...egress.labels];
+    const data = [...ingress.data, ...egress.data];
+    const bg = [...ingress.colors, ...egress.colors];
+
+    const newData = {
+      labels,
+      datasets: [
+        {
+          label: "Most Traffic",
+          data,
+          backgroundColor: bg,
+          borderRadius: { bottomRight: 10, topRight: 10 },
+          barThickness: 5,
+        },
+      ],
+    };
+    //console.log("Done Bar");
+    setData(newData);
+  };
+
+  let interval = 0;
+  useEffect(() => {
+    clearInterval(interval);
+    if (selInterface) {
+      setShow(true);
+      interval = setInterval(async () => {
+        const ingress = await Network.getIngressIpStats(selInterface);
+        const egress = await Network.getIngressIpStats(selInterface);
+        handleDataChange(ingress, egress);
+      }, 5000);
+    } else setShow(false);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [selInterface]);
+
+  return (
+    <Card cls="w-full h-full">
+      {show ? (
+        <>
+          <CardHeader>
+            <CardTitle value="Most Traffic Sent & Received" />
+          </CardHeader>
+          <CardBody>
+            <div className="w-full h-[calc(100%-40px)] relative">
+              <Bar options={options} data={data} />
+            </div>
+            <div className="flex justify-center items-center gap-8 py-2">
+              <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
+                <div className="size-6 bg-cyan-500 rounded"></div>
+                <div>Sent</div>
+              </div>
+              <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
+                <div className="size-6 bg-[#3A4AFF] rounded"></div>
+                <div>Received</div>
+              </div>
+            </div>
+          </CardBody>
+        </>
+      ) : (
+        <CardBody>
+          <Alert
+            value={errors.no_interface_selected}
+            title="Most Traffic Sent & Received"
+          />
+        </CardBody>
+      )}
+    </Card>
+  );
+}
+
+export default MostTrafficIps;
