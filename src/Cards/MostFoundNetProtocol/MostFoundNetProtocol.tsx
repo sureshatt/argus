@@ -142,26 +142,18 @@ function MostFoundNetProtocol() {
     }
   };
 
-
   let unlisten: UnlistenFn;
   useEffect(() => {
-
     (async () => {
       unlisten = await listen("stats", (e) => {
-        console.log("event: ", e);
-        console.log("event payload: ", e.payload);
-
         let networkStat = e.payload as NetworkStat;
-        console.log("networkStat: ", networkStat);
-
         let protocol_stats = networkStat.protocol_stats;
-        console.log("protocol_stats: ", protocol_stats);
-
+        if (protocol_stats.length > 0) {
+          setShow(true);
+          handleDataChange(protocol_stats);
+        }
       });
-
-
     })();
-
     return () => {
       if (unlisten) unlisten();
     };
