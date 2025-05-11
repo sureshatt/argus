@@ -20,13 +20,6 @@ export type NetworkInterface = {
     is_up: boolean
 };
 
-
-export type ProtocolStat = {
-    count: number,
-    protocol: string
-}
-
-
 // Base type with common fields
 export interface BasePacket {
     npid: number;
@@ -120,11 +113,6 @@ export interface ARPPacket extends BasePacket {
 export type Packet = EthernetPacket | IPv4Packet | TCPPacket | DNSPacket | IPv6Packet | ARPPacket;
 
 
-export type ArpStat = {
-    sender_hw_addr: string,
-    sender_proto_addr: string
-}
-
 export type BarCharData = {
     labels: string[];
     datasets: {
@@ -141,11 +129,6 @@ export type BarCharData = {
     }[];
 }
 
-export type IPTraffic = {
-    ip: string,
-    count: number
-}
-
 export type CountryTraffic = {
     country: string,
     count: number
@@ -154,4 +137,27 @@ export type CountryTraffic = {
 export type AlertData = {
     value: string,
     show: boolean
+}
+
+export type NetworkStat = {
+    protocol_stats: ProtocolStat[],
+    ingress_ip_stats: IpStat[],
+    egress_ip_stats: IpStat[],
+    arp_stats: ArpStat[],
+
+}
+
+export type ProtocolStat = {
+    count: number,
+    protocol: string
+}
+
+export type IpStat = {
+    ip: string,
+    count: number
+}
+
+export type ArpStat = {
+    sender_hw_addr: string,
+    sender_proto_addr: string
 }

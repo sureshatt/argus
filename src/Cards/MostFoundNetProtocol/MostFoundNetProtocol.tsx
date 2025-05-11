@@ -16,9 +16,10 @@ import {
 import { Bar } from "react-chartjs-2";
 import { Network } from "../../services/network";
 import { useNetStore } from "../../stores/net.store";
-import { BarCharData, ProtocolStat } from "../../types";
+import { BarCharData, NetworkStat, ProtocolStat } from "../../types";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 ChartJS.register(
   CategoryScale,
@@ -141,17 +142,30 @@ function MostFoundNetProtocol() {
     }
   };
 
-  let interval = 0;
+
+  let unlisten: UnlistenFn;
   useEffect(() => {
-    clearInterval(interval);
-    if (selInterface) {
-      setShow(true);
-      fetchData();
-      interval = setInterval(fetchData, 5000);
-    } else setShow(false);
+
+    (async () => {
+      unlisten = await listen("stats", (e) => {
+        console.log("event: ", e);
+        console.log("event payload: ", e.payload);
+
+        let networkStat = e.payload as NetworkStat;
+        console.log("networkStat: ", networkStat);
+
+        let protocol_stats = networkStat.protocol_stats;
+        console.log("protocol_stats: ", protocol_stats);
+
+      });
+
+
+    })();
+
     return () => {
-      clearInterval(interval);
+      if (unlisten) unlisten();
     };
+
   }, [selInterface]);
 
   return (

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ArpStat, CountryTraffic, IPTraffic, NetworkInterface, Packet, ProtocolStat } from "../types";
+import { ArpStat, CountryTraffic, IpStat, NetworkInterface, Packet, ProtocolStat } from "../types";
 
 
 async function getAvailableNetworkInterfaces() {
@@ -23,11 +23,11 @@ async function getArpIpStats(netIface: NetworkInterface) {
 }
 
 async function getIngressIpStats(netIface: NetworkInterface) {
-    return await invoke<IPTraffic[]>("get_ingress_ip_stats", { netiface: netIface })
+    return await invoke<IpStat[]>("get_ingress_ip_stats", { netiface: netIface })
 }
 
 async function getEngressIpStats(netIface: NetworkInterface) {
-    return await invoke<IPTraffic[]>("get_egress_ip_stats", { netiface: netIface })
+    return await invoke<IpStat[]>("get_egress_ip_stats", { netiface: netIface })
 }
 
 async function getEgressCountryStats(netIface: NetworkInterface) {
