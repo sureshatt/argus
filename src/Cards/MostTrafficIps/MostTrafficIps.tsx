@@ -66,44 +66,6 @@ export const options = {
   },
 };
 
-// const labels = ["Eth", "TCP", "IPv4", "UDP", "ARP"];
-
-// const data =
-
-// const shadowPlugin = {
-//   id: "shadowPlugin",
-//   beforeDatasetsDraw(chart: any) {
-//     const { ctx } = chart;
-//     ctx.save();
-
-//     chart.data.datasets.forEach((dataset: any, i: number) => {
-//       chart.getDatasetMeta(i).data.forEach((bar: any) => {
-//         ctx.shadowColor = "#3AE7FF36"; // Shadow color
-//         ctx.shadowBlur = 11; // Blur intensity
-//         ctx.shadowOffsetX = 0;
-//         ctx.shadowOffsetY = 4;
-//         ctx.fillRect(
-//           bar.x - bar.width / 2,
-//           bar.y + 10,
-//           bar.width,
-//           bar.height - 10
-//         );
-//         ctx.shadowColor = "#00000019"; // Shadow color
-//         ctx.shadowBlur = 4; // Blur intensity
-//         ctx.shadowOffsetX = 17;
-//         ctx.shadowOffsetY = 9;
-//         ctx.fillRect(
-//           bar.x - bar.width / 2,
-//           bar.y + 10,
-//           bar.width,
-//           bar.height - 10
-//         );
-//       });
-//     });
-
-//     ctx.restore();
-//   },
-// };
 
 function MostTrafficIps() {
   const [data, setData] = useState<BarCharData>({
@@ -128,7 +90,7 @@ function MostTrafficIps() {
     const data: number[] = [];
     const colors: string[] = [];
 
-    d.map((s) => {
+    d.forEach((s) => {
       labels.push(s.ip);
       data.push(s.count);
       colors.push(label == "in" ? "#3AE7FF" : "#3A4AFF");

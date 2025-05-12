@@ -14,7 +14,6 @@ import {
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import { Network } from "../../services/network";
 import { useNetStore } from "../../stores/net.store";
 import { BarCharData, NetworkStat, ProtocolStat } from "../../types";
 import Alert from "../../components/alert/Alert";
@@ -116,7 +115,7 @@ function MostFoundNetProtocol() {
     const labels: string[] = [];
     const data: number[] = [];
 
-    stats.map((s) => {
+    stats.forEach((s) => {
       labels.push(s.protocol);
       data.push(s.count);
     });
@@ -135,12 +134,6 @@ function MostFoundNetProtocol() {
     setData(newData);
   };
 
-  const fetchData = async () => {
-    if (selInterface && selInterface.name) {
-      const d = await Network.getProtocolsStats(selInterface?.name);
-      handleDataChange(d);
-    }
-  };
 
   let unlisten: UnlistenFn;
   useEffect(() => {
