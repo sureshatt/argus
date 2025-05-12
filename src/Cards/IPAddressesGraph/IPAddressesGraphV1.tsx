@@ -87,8 +87,8 @@ function IPAddressesGraph() {
   const initialNode: GraphNode<ArpStat> = {
     id: "center",
     data: {
-      sender_hw_addr: "",
-      sender_proto_addr: "",
+      source_mac: "",
+      source_ip: "",
     },
   };
   const createGraphData = (data: ArpStat[]) => {
@@ -96,10 +96,10 @@ function IPAddressesGraph() {
     const edges: GraphEdge[] = [];
 
     data.map((d, index) => {
-      nodes.push({ id: d.sender_hw_addr, data: d });
+      nodes.push({ id: d.source_mac, data: d });
       edges.push({
-        id: `${d.sender_hw_addr}-to-center`,
-        source: d.sender_hw_addr,
+        id: `${d.source_mac}-to-center`,
+        source: d.source_mac,
         target: "center",
       });
 
@@ -237,8 +237,8 @@ function Node({ data }: NodeProps) {
         <div
           className={`absolute top-9 peer-hover:z-[9999]  hover:z-50 -translate-x-1/2 flex flex-col bg-light-green-700 w-fit rounded p-0.5 text-[10px] text-light-green leading-3`}
         >
-          <p className="text-nowrap">{data.data.sender_proto_addr}</p>
-          <p className="text-nowrap">{data.data.sender_hw_addr} (MAC)</p>
+          <p className="text-nowrap">{data.data.source_ip}</p>
+          <p className="text-nowrap">{data.data.source_mac} (MAC)</p>
         </div>
       ) : null}
     </div>

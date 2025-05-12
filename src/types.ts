@@ -158,6 +158,6 @@ export type IpStat = {
 }
 
 export type ArpStat = {
-    sender_hw_addr: string,
-    sender_proto_addr: string
+    source_mac: string,
+    source_ip: string
 }

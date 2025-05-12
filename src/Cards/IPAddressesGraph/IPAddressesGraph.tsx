@@ -4,13 +4,13 @@ import CardBody from "../../components/card/CardBody";
 import CardHeader from "../../components/card/CardHeader";
 import CardTitle from "../../components/card/CardTitle";
 import { useNetStore } from "../../stores/net.store";
-import { Network } from "../../services/network";
 import { ExtensionCategory, Graph, register } from "@antv/g6";
-import { AlertData, ArpStat } from "../../types";
+import { ArpStat, NetworkStat } from "../../types";
 import { ReactNode } from "@antv/g6-extension-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 register(ExtensionCategory.NODE, "react", ReactNode);
 
@@ -25,10 +25,6 @@ interface GraphEdge {
   target: string;
 }
 
-interface GraphData<T> {
-  nodes: GraphNode<T>[];
-  edges: GraphEdge[];
-}
 
 function IPAddressesGraph() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,8 +83,8 @@ function IPAddressesGraph() {
   const initialNode: GraphNode<ArpStat> = {
     id: "center",
     data: {
-      sender_hw_addr: "",
-      sender_proto_addr: "",
+      source_mac: "",
+      source_ip: "",
     },
   };
 
@@ -96,35 +92,38 @@ function IPAddressesGraph() {
     const nodes: GraphNode<ArpStat>[] = [initialNode];
     const edges: GraphEdge[] = [];
 
-    data.map((d) => {
-      nodes.push({ id: d.sender_hw_addr, data: d });
+    data.forEach((d) => {
+      console.log("node data=>", d);
+      nodes.push({ id: d.source_mac, data: d });
       edges.push({
-        id: `${d.sender_hw_addr}-to-center`,
-        source: d.sender_hw_addr,
+        id: `${d.source_mac}-to-center`,
+        source: d.source_mac,
         target: "center",
       });
     });
     return { nodes, edges };
   };
 
+  let unlisten: UnlistenFn;
+  
   const fetchData = async () => {
     if (currentInterface) {
-      const d = await Network.getArpIpStats(currentInterface);
-      console.log("data=>", d);
-      const graphData = createGraphData(d);
-      await drawTopology(graphData);
+      unlisten = await listen("stats", async (e) => {
+        let networkStat = e.payload as NetworkStat;
+        let arp_stats = networkStat.arp_stats;
+        if (arp_stats.length > 0) {
+          const graphData = createGraphData(arp_stats);
+          await drawTopology(graphData);
+        }
+      });
     }
   };
 
-  let listener = 0;
   useEffect(() => {
-    //console.log("INTERFACE CHANGED RERENDER!!!");
-    clearInterval(listener);
     (async () => {
       if (currentInterface) {
         setShow(true);
         await fetchData();
-        listener = setInterval(fetchData, 5000);
       } else if (show) {
         setShow(false);
         // Clean up graph when interface is unset
@@ -135,7 +134,7 @@ function IPAddressesGraph() {
       }
     })();
     return () => {
-      clearInterval(listener);
+      if (unlisten) unlisten();
       // Clean up graph on unmount
       if (graphRef.current) {
         graphRef.current.destroy();
@@ -150,16 +149,14 @@ function IPAddressesGraph() {
         <CardBody>
           <Alert
             value={errors.no_interface_selected}
-            title="IP Addresses (and Country) to Which Most 
-Traffic is Sent"
+            title="ARP Network Discovery"
           />
         </CardBody>
       ) : (
         <>
           <CardHeader>
             <CardTitle
-              value="IP Addresses (and Country) to Which Most 
-Traffic is Sent"
+              value="ARP Network Discovery"
             />
           </CardHeader>
           <CardBody>
@@ -215,8 +212,8 @@ function Node({ data }: NodeProps) {
         <div
           className={`absolute top-9 peer-hover:z-[9999] hover:z-50 -translate-x-1/2 flex flex-col bg-light-green-700 w-fit rounded p-0.5 text-[10px] text-light-green leading-3`}
         >
-          <p className="text-nowrap">{data.data.sender_proto_addr}</p>
-          <p className="text-nowrap">{data.data.sender_hw_addr} (MAC)</p>
+          <p className="text-nowrap">{data.data.source_ip}</p>
+          <p className="text-nowrap">{data.data.source_mac} (MAC)</p>
         </div>
       ) : null}
     </div>
