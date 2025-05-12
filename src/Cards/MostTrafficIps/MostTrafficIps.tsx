@@ -14,11 +14,11 @@ import {
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import { Network } from "../../services/network";
 import { useNetStore } from "../../stores/net.store";
-import { BarCharData, IPTraffic } from "../../types";
+import { BarCharData, IpStat, NetworkStat } from "../../types";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 ChartJS.register(
   CategoryScale,
@@ -123,7 +123,7 @@ function MostTrafficIps() {
 
   const selInterface = useNetStore((state) => state.currentInterface);
 
-  const generateDataset = (d: IPTraffic[], label: "in" | "out") => {
+  const generateDataset = (d: IpStat[], label: "in" | "out") => {
     const labels: string[] = [];
     const data: number[] = [];
     const colors: string[] = [];
@@ -137,7 +137,7 @@ function MostTrafficIps() {
     return { labels, data, colors };
   };
 
-  const handleDataChange = (incoming: IPTraffic[], outcoming: IPTraffic[]) => {
+  const handleDataChange = (incoming: IpStat[], outcoming: IpStat[]) => {
     const ingress = generateDataset(incoming, "in");
     const egress = generateDataset(outcoming, "out");
 
@@ -163,20 +163,26 @@ function MostTrafficIps() {
     setData(newData);
   };
 
-  let interval = 0;
+
+  let unlisten: UnlistenFn;
   useEffect(() => {
-    clearInterval(interval);
-    if (selInterface) {
-      setShow(true);
-      interval = setInterval(async () => {
-        const ingress = await Network.getIngressIpStats(selInterface);
-        const egress = await Network.getIngressIpStats(selInterface);
-        handleDataChange(ingress, egress);
-      }, 5000);
-    } else setShow(false);
+    (async () => {
+      if (selInterface) {
+        setShow(true);
+        unlisten = await listen("stats", (e) => {
+                let networkStat = e.payload as NetworkStat;
+                const ingress = networkStat.ingress_ip_stats;
+                const egress = networkStat.egress_ip_stats;
+                if (ingress.length > 0 && egress.length > 0) {
+                  setShow(true);
+                   handleDataChange(ingress, egress);
+                }
+              });
+      } else setShow(false);
+     })();
 
     return () => {
-      clearInterval(interval);
+       if (unlisten) unlisten();
     };
   }, [selInterface]);
 
