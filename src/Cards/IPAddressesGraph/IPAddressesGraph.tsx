@@ -38,9 +38,10 @@ function IPAddressesGraph() {
     if (!graphRef.current) {
       // Initialize graph if it doesn't exist
       graphRef.current = new Graph({
-        animation: false,
+        animation: true,
         data: data as any,
         container: containerRef.current!,
+        behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
         autoFit: { type: "view" },
         node: {
           type: "react",
@@ -70,13 +71,35 @@ function IPAddressesGraph() {
             strength: 1,
           },
           collide: { radius: 35 },
+          preventOverlap: true,
         },
       });
       await graphRef.current.render();
     } else {
       // Update existing graph data
-      graphRef.current.setData(data); //changeData(data);
-      graphRef.current.render();
+      let existingData = graphRef.current.getData();
+      let existingNodes = existingData.nodes;
+      let newNodes = data.nodes.filter((node: GraphNode<any>) =>
+        existingNodes.every((existingNode) => existingNode.id !== node.id)
+      );
+
+      if (newNodes.length === 0) {
+        return;
+      }
+
+      let existingEdges = existingData.edges;
+      let newEdges = data.edges.filter((edge: GraphEdge) =>
+        existingEdges.every((existingEdge) => existingEdge.id !== edge.id)
+      );
+
+      let updatedData = {
+        nodes: newNodes,
+        edges: newEdges,
+      };
+
+      graphRef.current.addData(updatedData);
+      graphRef.current.layout();
+
     }
   };
 
@@ -93,7 +116,6 @@ function IPAddressesGraph() {
     const edges: GraphEdge[] = [];
 
     data.forEach((d) => {
-      console.log("node data=>", d);
       nodes.push({ id: d.source_mac, data: d });
       edges.push({
         id: `${d.source_mac}-to-center`,
