@@ -35,3 +35,32 @@
   .custom-scrollbar::-webkit-scrollbar-track {
     @apply bg-black/10 rounded-md /* Background color of the scrollbar track */;
   }
+
+@font-face {
+  font-family: 'Quantico';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('public/fonts/quantico/rax-HiSdp9cPL3KIF4xpLjpSmw.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Quantico';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('public/fonts/quantico/rax7HiSdp9cPL3KIF7xuHIRfu0_y8zac.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Quantico';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('public/fonts/quantico/rax-HiSdp9cPL3KIF4xpLjpSmw.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Quantico';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('public/fonts/quantico/rax5HiSdp9cPL3KIF7TQARhfsUjQ8Q.woff2') format('woff2');
+}
