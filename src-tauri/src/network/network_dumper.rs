@@ -14,14 +14,16 @@ use pnet::datalink::{self, NetworkInterface};
 use std::thread;
 use std::time::Duration;
 use tauri::{State, AppHandle};
+use crate::network::network_interface::NetIface;
 use crate::{AppState, Counter};
 use crate::network::layers;
 
 pub struct Context<'a> {
-    pub interface: &'a NetworkInterface,
+    pub interface: &'a NetIface,
     pub app_handle: &'a AppHandle,
     pub counter: &'a Counter,
     pub parent_counter: &'a String,
+    pub geo_ip_ranges: &'a Vec<crate::network::ip_utils::IpRange>,
 }
 
 #[tauri::command]
@@ -35,8 +37,10 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         .next()
         .unwrap_or_else(|| panic!("No such network interface: {}", selection));
 
-        let selected_clone = state.selected.clone();
-        let sequence_generator = state.counter.clone();
+    let selected_clone = state.selected.clone();
+    let sequence_generator = state.counter.clone();
+    let geo_ip_ranges = state.geo_ip_ranges.clone();
+    let net_iface = NetIface::from_network_interface(&interface); 
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -55,16 +59,18 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         }
 
         let counter = sequence_generator.read().unwrap();
+        let geo_ip_ranges = geo_ip_ranges.read().unwrap();
 
         match rx.next() {
             Ok(packet) => {
 
                 let parent_counter = counter.next();
                 let context = Context {
-                    interface: &interface,
+                    interface: &net_iface,
                     app_handle: &app_handle,
                     counter: &counter,
                     parent_counter: &parent_counter,
+                    geo_ip_ranges: &geo_ip_ranges,
                 };
 
                 let _ = layers::process_packet(packet, &context);

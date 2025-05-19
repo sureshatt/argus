@@ -6,6 +6,7 @@ use storage::logger::listen_to_event;
 use storage::log_analytics::{publish_stats, get_packet_data};
 use network::network_interface::{get_net_ifaces, NetIface};
 use network::network_dumper::dump;
+use network::ip_utils::load_ip_ranges;
 use std::collections::VecDeque;
 use std::num::NonZero;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -18,6 +19,7 @@ struct AppState {
     counter: Arc<RwLock<Counter>>,
     basic_logs_store: Arc<RwLock<VecDeque<BasicLogEntry>>>,
     detailed_logs_store: Arc<RwLock<LruCache<u32, String>>>,
+    geo_ip_ranges: Arc<RwLock<Vec<network::ip_utils::IpRange>>>,
 }
 
 #[tauri::command]
@@ -59,12 +61,14 @@ pub async fn run() {
 
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
+    let geo_ip_ranges = load_ip_ranges("dbip-country-lite.csv").unwrap();
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),
         counter: Arc::new(RwLock::new(sq_counter)),
         basic_logs_store: Arc::new(RwLock::new(basic_logs_store)),
         detailed_logs_store: Arc::new(RwLock::new(detailed_logs_store)),
+        geo_ip_ranges: Arc::new(RwLock::new(geo_ip_ranges)),
     };
 
     tauri::Builder::default()

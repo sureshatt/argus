@@ -23,35 +23,33 @@ impl NetIface {
             return true;
         }
     }
+
+    pub fn from_network_interface(interface: &NetworkInterface) -> Self {
+        NetIface {
+            name: interface.name.clone(),
+            mac: get_mac_address(interface),
+            ipv4_address: get_ipv4_address(&interface.ips),
+            ipv6_addresses: get_ipv6_address(&interface.ips),
+            is_up: interface.is_up(),
+            is_running: interface.is_running(),
+            is_loopback: interface.is_loopback(),
+            is_broadcast: interface.is_broadcast(),
+            is_multicast: interface.is_multicast(),
+            is_p2p: interface.is_point_to_point(),
+        }
+    }
 }
 
 pub fn get_net_ifaces() -> Vec<NetIface> {
-
     let mut netface_list: Vec<NetIface> = Vec::new();
-
     let interfaces = pnet::datalink::interfaces();    
 
     for intfce in &interfaces {
-
-        let netface = NetIface {
-            name: intfce.name.clone(),
-            mac: get_mac_address(intfce),
-            ipv4_address: get_ipv4_address(&intfce.ips),
-            ipv6_addresses: get_ipv6_address(&intfce.ips),
-            is_up: intfce.is_up(),
-            is_running: intfce.is_running(),
-            is_loopback: intfce.is_loopback(),
-            is_broadcast: intfce.is_broadcast(),
-            is_multicast: intfce.is_multicast(),
-            is_p2p: intfce.is_point_to_point()
-        };
-
+        let netface = NetIface::from_network_interface(intfce);
         netface_list.push(netface);
-
     }
 
     return netface_list;
-    
 }
 
 fn get_mac_address(interface: &NetworkInterface) -> String {

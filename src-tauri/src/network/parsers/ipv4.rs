@@ -7,6 +7,7 @@ use pnet::packet::{
 use serde_json::json;
 use tauri::Emitter;
 
+use crate::network::ip_utils::get_ip_origin;
 use crate::network::network_dumper::Context;
 
 pub fn parse<'a>(
@@ -18,6 +19,7 @@ pub fn parse<'a>(
     if let Some(ipv4_packet) = ipv4_packet_op {
         let ipv4_options_packet = Ipv4OptionPacket::new(ipv4_packet.payload());
         let mut ipv4_options_json = json!({});
+
         ipv4_options_packet.map(|ipv4_options_packet| {
             ipv4_options_json = json!({
                 "copied": ipv4_options_packet.get_copied().to_string(),
@@ -27,6 +29,19 @@ pub fn parse<'a>(
                 "data": ipv4_options_packet.payload().to_vec()
             })
         });
+
+        let source_ip_origin = get_ip_origin(
+            &ipv4_packet.get_source().to_string(),
+            std::slice::from_ref(&context.interface.ipv4_address),
+            &context.geo_ip_ranges,
+        );
+
+        let destination_ip_origin = get_ip_origin(
+            &ipv4_packet.get_destination().to_string(),
+            std::slice::from_ref(&context.interface.ipv4_address),
+            &context.geo_ip_ranges,
+        );
+
 
         let ipv4_json = json!({
             "npid": context.counter.next(),
@@ -38,6 +53,8 @@ pub fn parse<'a>(
             "length": ipv4_packet.packet().len().to_string(),
             "info": "",
             "interface": context.interface.name.to_string(),
+            "source_ip_origin": source_ip_origin.unwrap_or("unknown".to_string()),
+            "destination_ip_origin": destination_ip_origin.unwrap_or("unknown".to_string()),
             "version": ipv4_packet.get_version().to_string(),
             "header_length": ipv4_packet.get_header_length().to_string(),
             "dscp": ipv4_packet.get_dscp().to_string(),

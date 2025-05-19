@@ -131,7 +131,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
 
         *protocol_stats_map.entry(protocol.clone()).or_insert(0) += 1;
 
-        if protocol != "ARP" && protocol != "ICMP" && protocol != "ICMPv6" && protocol != "Ethernet" {
+        if protocol == "IPv4" || protocol == "IPv6" {
             *ingress_ip_stat_map.entry(source).or_insert(0) += 1;
             *egress_ip_stat_map.entry(destination).or_insert(0) += 1;
         }

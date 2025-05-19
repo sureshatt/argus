@@ -27,4 +27,5 @@ pnet = "0.35.0"# Use the latest version
 chrono = "0.4"
 hickory-proto = "0.24.4"
 lru = "0.12"
+csv = "1.3"
 

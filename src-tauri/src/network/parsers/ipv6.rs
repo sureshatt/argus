@@ -1,9 +1,9 @@
+use crate::network::ip_utils::get_ip_origin;
+use crate::network::network_dumper::Context;
 use chrono::Utc;
 use pnet::packet::{ethernet::EthernetPacket, ipv6::Ipv6Packet, Packet};
 use serde_json::json;
 use tauri::Emitter;
-
-use crate::network::network_dumper::Context;
 
 pub fn parse<'a>(
     packet: &'a EthernetPacket<'a>,
@@ -12,6 +12,19 @@ pub fn parse<'a>(
     let ipv6_packet = Ipv6Packet::new(packet.payload());
 
     if let Some(ipv6_packet) = ipv6_packet {
+        
+        let source_ip_origin = get_ip_origin(
+            &ipv6_packet.get_source().to_string(),
+            &context.interface.ipv6_addresses,
+            &context.geo_ip_ranges,
+        );
+
+        let destination_ip_origin = get_ip_origin(
+            &ipv6_packet.get_destination().to_string(),
+            &context.interface.ipv6_addresses,
+            &context.geo_ip_ranges,
+        );
+
         let ipv6_json = json!({
             "npid": context.counter.next(),
             "parent": context.parent_counter.to_string(),
@@ -22,6 +35,8 @@ pub fn parse<'a>(
             "length": ipv6_packet.packet().len().to_string(),
             "info": "",
             "interface": context.interface.name.to_string(),
+            "source_ip_origin": source_ip_origin.unwrap_or("unknown".to_string()),
+            "destination_ip_origin": destination_ip_origin.unwrap_or("unknown".to_string()),
             "version": ipv6_packet.get_version().to_string(),
             "traffic_class": ipv6_packet.get_traffic_class().to_string(),
             "flow_label": ipv6_packet.get_flow_label().to_string(),
