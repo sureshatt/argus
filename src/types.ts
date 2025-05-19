@@ -143,6 +143,8 @@ export type NetworkStat = {
     protocol_stats: ProtocolStat[],
     ingress_ip_stats: IpStat[],
     egress_ip_stats: IpStat[],
+    ingress_country_stats: CountryStat[],
+    egress_country_stats: CountryStat[],
     arp_stats: ArpStat[],
 
 }
@@ -154,6 +156,11 @@ export type ProtocolStat = {
 
 export type IpStat = {
     ip: string,
+    count: number
+}
+
+export type CountryStat = {
+    country: string,
     count: number
 }
 

@@ -11,6 +11,8 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
 import am5geodata_continentsLow from "@amcharts/amcharts5-geodata/continentsLow";
 import { Network } from "../../services/network";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { CountryStat, NetworkStat } from "../../types";
 
 function TrafficMap() {
   const currentInterface = useNetStore((state) => state.currentInterface);
@@ -133,20 +135,19 @@ function TrafficMap() {
     };
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (ingress_country_stats: CountryStat[], egress_country_stats: CountryStat[]) => {
     if (currentInterface && pointSeries) {
-      const inbound = await Network.getIngressCountryStats(currentInterface);
-      const outbound = await Network.getEgressCountryStats(currentInterface);
-      //console.log("inbound", inbound);
-      //console.log("outbound", outbound);
+     
+      console.log("inbound", ingress_country_stats);
+      console.log("outbound", egress_country_stats);
       const items = [
-        ...inbound.map((obj) => ({
+        ...ingress_country_stats.map((obj) => ({
           country: obj.country,
           name: obj.country.toLowerCase(),
           count: obj.count,
           t: "inbound",
         })),
-        ...outbound.map((obj) => ({
+        ...egress_country_stats.map((obj) => ({
           country: obj.country,
           name: obj.country.toLowerCase(),
           count: obj.count,
@@ -155,21 +156,26 @@ function TrafficMap() {
       ];
       pointSeries.data.clear();
       pointSeries.data.pushAll(items);
-      // items.forEach((item, i) => {
-      //   pointSeries?.data.push(item);
-      // });
     }
   };
-  let listener = 0;
+
+ let unlisten: UnlistenFn;
   useEffect(() => {
-    clearInterval(listener);
     (async () => {
       if (currentInterface && pointSeries) {
-        fetchData();
-        listener = setInterval(fetchData, 5000);
+
+        unlisten = await listen("stats", (e) => {
+        let networkStat = e.payload as NetworkStat;
+        let ingress_country_stats = networkStat.ingress_country_stats;
+        let egress_country_stats = networkStat.egress_country_stats;
+        
+        fetchData(ingress_country_stats, egress_country_stats);
+      });
       }
     })();
-    return () => clearInterval(listener);
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, [currentInterface]);
 
   return (

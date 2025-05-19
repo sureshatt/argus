@@ -8,6 +8,9 @@ use std::str::FromStr;
 use serde::Deserialize;
 
 
+pub const LOCAL_ORIGIN: &str = "local";
+
+
 pub fn ip_in_any_cidr(ip_str: &str, cidr_list: &[String]) -> bool {
     let ip: IpAddr = match ip_str.parse() {
         Ok(ip) => ip,
@@ -89,7 +92,7 @@ pub fn lookup_country<'a>(ip_str: &str, ranges: &'a [IpRange]) -> Option<&'a str
 pub fn get_ip_origin<'a>(ip_str: &str, cidr_list: &[String], ranges: &'a [IpRange]) -> Option<String> {
 
     if ip_in_any_cidr(ip_str, cidr_list) {
-        Some("local".to_string())
+        Some(LOCAL_ORIGIN.to_string())
     } else {
         lookup_country(ip_str, ranges).map(|country| country.to_string())
     }

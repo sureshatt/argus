@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{AppHandle, Emitter, Listener, State};
 use crate::AppState;
-
+use crate::network::ip_utils::LOCAL_ORIGIN;
 use super::log_entry::BasicLogEntry;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,6 +17,17 @@ struct IpStat {
 impl IpStat {
     fn new(ip: String, count: usize) -> Self {
         IpStat { ip, count }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct CountryStat {
+    country: String,
+    count: usize,
+}
+impl CountryStat {
+    fn new(country: String, count: usize) -> Self {
+        CountryStat { country, count }
     }
 }
 
@@ -47,6 +58,8 @@ struct NetworkStat {
     protocol_stats: Vec<ProtocolStat>,
     ingress_ip_stats: Vec<IpStat>,
     egress_ip_stats: Vec<IpStat>,
+    ingress_country_stats: Vec<CountryStat>,
+    egress_country_stats: Vec<CountryStat>,
     arp_stats: Vec<ArpStat>,
 }
 impl NetworkStat {
@@ -54,12 +67,16 @@ impl NetworkStat {
         protocol_stats: Vec<ProtocolStat>,
         ingress_ip_stats: Vec<IpStat>,
         egress_ip_stats: Vec<IpStat>,
+        ingress_country_stats: Vec<CountryStat>,
+        egress_country_stats: Vec<CountryStat>,
         arp_stats: Vec<ArpStat>,
     ) -> Self {
         NetworkStat {
             protocol_stats,
             ingress_ip_stats,
             egress_ip_stats,
+            ingress_country_stats,
+            egress_country_stats,
             arp_stats,
         }
     }
@@ -121,6 +138,8 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
     let mut protocol_stats_map: HashMap<String, usize> = HashMap::new();
     let mut ingress_ip_stat_map: HashMap<String, usize> = HashMap::new();
     let mut egress_ip_stat_map: HashMap<String, usize> = HashMap::new();
+    let mut ingress_country_stats_map: HashMap<String, usize> = HashMap::new();
+    let mut egress_country_stats_map: HashMap<String, usize> = HashMap::new();
     let mut arp_stats_map: HashMap<String, String> = HashMap::new();
 
     for log_entry in basic_logs_store.iter() {
@@ -128,12 +147,34 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
         let protocol = &log_entry.protocol;
         let source = log_entry.source.clone();
         let destination = log_entry.destination.clone();
-
+        
         *protocol_stats_map.entry(protocol.clone()).or_insert(0) += 1;
-
+        
         if protocol == "IPv4" || protocol == "IPv6" {
-            *ingress_ip_stat_map.entry(source).or_insert(0) += 1;
-            *egress_ip_stat_map.entry(destination).or_insert(0) += 1;
+            
+            let npid = log_entry.npid.parse::<u32>();
+            if let Some(json_str) = detailed_logs_store.peek(&npid.unwrap()) {
+                
+                let json_value: serde_json::Value = serde_json::from_str(json_str).unwrap();
+                let source_origin = json_value["source_ip_origin"].as_str().unwrap_or("");
+                let destination_origin = json_value["destination_ip_origin"].as_str().unwrap_or("");
+
+                // ignore the local IPs for IP stats
+                if source_origin != LOCAL_ORIGIN {
+                    *ingress_ip_stat_map.entry(source).or_insert(0) += 1;
+
+                    if source_origin != "unknown" {
+                        *ingress_country_stats_map.entry(source_origin.to_string()).or_insert(0) += 1;
+                    }
+                }
+                if destination_origin != LOCAL_ORIGIN {
+                    *egress_ip_stat_map.entry(destination).or_insert(0) += 1;
+
+                    if destination_origin != "unknown" {
+                        *egress_country_stats_map.entry(destination_origin.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
         }
 
         if protocol == "ARP" {
@@ -174,6 +215,22 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
     .map(|(ip, count)| IpStat::new(ip, count))
     .collect();
 
+    let mut ingress_country_stats_sorted: Vec<_> = ingress_country_stats_map.into_iter().collect();
+    ingress_country_stats_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    let ingress_country_stats: Vec<CountryStat> = ingress_country_stats_sorted
+        .into_iter()
+        .take(10)
+        .map(|(country, count)| CountryStat::new(country, count))
+        .collect();
+
+    let mut egress_country_stats_sorted: Vec<_> = egress_country_stats_map.into_iter().collect();
+    egress_country_stats_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    let egress_country_stats: Vec<CountryStat> = egress_country_stats_sorted
+        .into_iter()
+        .take(10)
+        .map(|(country, count)| CountryStat::new(country, count))
+        .collect();
+
     let arp_stats: Vec<ArpStat> = arp_stats_map
         .iter()
         .map(|(source_ip, source_mac)| ArpStat::new(source_ip.clone(), source_mac.clone()))
@@ -183,6 +240,8 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
         protocol_stats,
         ingress_ip_stats,
         egress_ip_stats,
+        ingress_country_stats,
+        egress_country_stats,
         arp_stats
     );
 
