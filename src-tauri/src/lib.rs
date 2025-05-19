@@ -77,6 +77,8 @@ pub async fn run() {
             dump
         ])
         .setup(move |app| {
+            let window = app.get_webview_window("main").unwrap();
+            window.maximize().unwrap();
             let app_handle = app.handle().clone();
             listen_to_event(&app_handle, app.state::<AppState>(), max_number_of_logs);
             publish_stats(&app_handle, app.state::<AppState>());

@@ -7,11 +7,14 @@ This template should help get you started developing with Tauri in vanilla HTML,
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
 ## How to run the code
+
 1. `pnpm tauri dev` for development
-2. `pnpm tauri build` for distribution binary 
+2. `pnpm tauri build` for distribution binary
 
 ## Storage
-example packet storeage
+
+example packet
+
 ```json
 {
    "destination":"String(""ff:ff:ff:ff:ff:ff"")",
@@ -40,3 +43,4 @@ example packet storeage
    "source":"String(""24:4b:03:fa:36:cb"")",
    "timestamp":"String(""1738410151204"")"
 }
+```
