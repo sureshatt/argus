@@ -58,8 +58,7 @@ struct NetworkStat {
     protocol_stats: Vec<ProtocolStat>,
     ingress_ip_stats: Vec<IpStat>,
     egress_ip_stats: Vec<IpStat>,
-    ingress_country_stats: Vec<CountryStat>,
-    egress_country_stats: Vec<CountryStat>,
+    country_stats: Vec<CountryStat>,
     arp_stats: Vec<ArpStat>,
 }
 impl NetworkStat {
@@ -67,16 +66,14 @@ impl NetworkStat {
         protocol_stats: Vec<ProtocolStat>,
         ingress_ip_stats: Vec<IpStat>,
         egress_ip_stats: Vec<IpStat>,
-        ingress_country_stats: Vec<CountryStat>,
-        egress_country_stats: Vec<CountryStat>,
+        country_stats: Vec<CountryStat>,
         arp_stats: Vec<ArpStat>,
     ) -> Self {
         NetworkStat {
             protocol_stats,
             ingress_ip_stats,
             egress_ip_stats,
-            ingress_country_stats,
-            egress_country_stats,
+            country_stats,
             arp_stats,
         }
     }
@@ -138,8 +135,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
     let mut protocol_stats_map: HashMap<String, usize> = HashMap::new();
     let mut ingress_ip_stat_map: HashMap<String, usize> = HashMap::new();
     let mut egress_ip_stat_map: HashMap<String, usize> = HashMap::new();
-    let mut ingress_country_stats_map: HashMap<String, usize> = HashMap::new();
-    let mut egress_country_stats_map: HashMap<String, usize> = HashMap::new();
+    let mut country_stats_map: HashMap<String, usize> = HashMap::new();
     let mut arp_stats_map: HashMap<String, String> = HashMap::new();
 
     for log_entry in basic_logs_store.iter() {
@@ -163,15 +159,15 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
                 if source_origin != LOCAL_ORIGIN {
                     *ingress_ip_stat_map.entry(source).or_insert(0) += 1;
 
-                    if source_origin != "unknown" {
-                        *ingress_country_stats_map.entry(source_origin.to_string()).or_insert(0) += 1;
+                    if source_origin.to_lowercase() != "unknown" && source_origin.to_lowercase() != "zz" {
+                        *country_stats_map.entry(source_origin.to_string()).or_insert(0) += 1;
                     }
                 }
                 if destination_origin != LOCAL_ORIGIN {
                     *egress_ip_stat_map.entry(destination).or_insert(0) += 1;
 
-                    if destination_origin != "unknown" {
-                        *egress_country_stats_map.entry(destination_origin.to_string()).or_insert(0) += 1;
+                    if destination_origin.to_lowercase() != "unknown" && destination_origin.to_lowercase() != "zz" {
+                        *country_stats_map.entry(destination_origin.to_string()).or_insert(0) += 1;
                     }
                 }
             }
@@ -215,17 +211,9 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
     .map(|(ip, count)| IpStat::new(ip, count))
     .collect();
 
-    let mut ingress_country_stats_sorted: Vec<_> = ingress_country_stats_map.into_iter().collect();
-    ingress_country_stats_sorted.sort_by(|a, b| b.1.cmp(&a.1));
-    let ingress_country_stats: Vec<CountryStat> = ingress_country_stats_sorted
-        .into_iter()
-        .take(10)
-        .map(|(country, count)| CountryStat::new(country, count))
-        .collect();
-
-    let mut egress_country_stats_sorted: Vec<_> = egress_country_stats_map.into_iter().collect();
-    egress_country_stats_sorted.sort_by(|a, b| b.1.cmp(&a.1));
-    let egress_country_stats: Vec<CountryStat> = egress_country_stats_sorted
+    let mut country_stats_sorted: Vec<_> = country_stats_map.into_iter().collect();
+    country_stats_sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    let country_stats: Vec<CountryStat> = country_stats_sorted
         .into_iter()
         .take(10)
         .map(|(country, count)| CountryStat::new(country, count))
@@ -240,8 +228,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
         protocol_stats,
         ingress_ip_stats,
         egress_ip_stats,
-        ingress_country_stats,
-        egress_country_stats,
+        country_stats,
         arp_stats
     );
 

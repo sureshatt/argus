@@ -3,22 +3,17 @@ import CardBody from "../../components/card/CardBody";
 import { useNetStore } from "../../stores/net.store";
 import CardHeader from "../../components/card/CardHeader";
 import CardTitle from "../../components/card/CardTitle";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
-import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
-import am5geodata_continentsLow from "@amcharts/amcharts5-geodata/continentsLow";
-import { Network } from "../../services/network";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { CountryStat, NetworkStat } from "../../types";
 
 function TrafficMap() {
   const currentInterface = useNetStore((state) => state.currentInterface);
-  // const [root, setRoot] = useState<am5.Root>();
   const [pointSeries, setPointSeries] = useState<am5map.MapPointSeries>();
-  // const rootEl = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     var root = am5.Root.new("chartdiv");
@@ -27,7 +22,7 @@ function TrafficMap() {
 
       let chart = root.container.children.push(
         am5map.MapChart.new(root, {
-          projection: am5map.geoMercator(),
+          projection: am5map.geoMercator(), // https://www.amcharts.com/docs/v5/charts/map-chart/#Built_in_projections
           panX: "rotateX",
           panY: "translateY",
           zoomLevel: 1,
@@ -37,7 +32,7 @@ function TrafficMap() {
       let legend = chart.children.push(am5.Legend.new(root, {}));
       legend.data.setAll(chart.series.values);
 
-      let polygonSeries = chart.series.push(
+      let polygonSeries = chart.series.push( // https://www.amcharts.com/docs/v5/charts/map-chart/#Available_series_types
         am5map.MapPolygonSeries.new(root, {
           geoJSON: am5geodata_worldLow,
           exclude: ["AQ"],
@@ -81,15 +76,8 @@ function TrafficMap() {
           height: 72,
         });
 
-        pin.adapters.add("fill", function (clr, target) {
-          // Access data context through dataItem
-          const dataContext = target.dataItem?.dataContext as any;
-          if (dataContext?.t) {
-            return dataContext.t === "inbound"
-              ? am5.color("#11E4A6")
-              : am5.color("#FF8E94");
-          }
-          return clr;
+        pin.adapters.add("fill", function () {
+          return am5.color("#11E4A6");
         });
 
         // Create pin shape using SVG path
@@ -113,7 +101,6 @@ function TrafficMap() {
         flag.adapters.add("src", function (src, target) {
           // Access data context through dataItem
           const dataContext = target.dataItem?.dataContext as any;
-          //console.log("data", dataContext);
           if (dataContext?.country) {
             return `https://flagcdn.com/${dataContext.name}.svg`;
           }
@@ -135,24 +122,17 @@ function TrafficMap() {
     };
   }, []);
 
-  const fetchData = async (ingress_country_stats: CountryStat[], egress_country_stats: CountryStat[]) => {
+  const fetchData = async (country_stats: CountryStat[]) => {
     if (currentInterface && pointSeries) {
-     
-      console.log("inbound", ingress_country_stats);
-      console.log("outbound", egress_country_stats);
+
+      console.log("country stats", country_stats);
       const items = [
-        ...ingress_country_stats.map((obj) => ({
+        ...country_stats.map((obj) => ({
           country: obj.country,
           name: obj.country.toLowerCase(),
           count: obj.count,
           t: "inbound",
-        })),
-        ...egress_country_stats.map((obj) => ({
-          country: obj.country,
-          name: obj.country.toLowerCase(),
-          count: obj.count,
-          t: "outbound",
-        })),
+        }))
       ];
       pointSeries.data.clear();
       pointSeries.data.pushAll(items);
@@ -166,10 +146,9 @@ function TrafficMap() {
 
         unlisten = await listen("stats", (e) => {
         let networkStat = e.payload as NetworkStat;
-        let ingress_country_stats = networkStat.ingress_country_stats;
-        let egress_country_stats = networkStat.egress_country_stats;
+        let country_stats = networkStat.country_stats;
         
-        fetchData(ingress_country_stats, egress_country_stats);
+        fetchData(country_stats);
       });
       }
     })();
