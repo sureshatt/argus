@@ -64,7 +64,7 @@ function TrafficMap() {
           centerX: am5.p50,
           centerY: am5.p100, // Anchor at bottom center
           dy: -15, // Adjust pin position
-          tooltipText: "{count}",
+          tooltipHTML: "<font color='#11E4A6'>{count}</font>"
         });
 
         // Create pin shape using SVG path
@@ -102,7 +102,8 @@ function TrafficMap() {
           // Access data context through dataItem
           const dataContext = target.dataItem?.dataContext as any;
           if (dataContext?.country) {
-            return `https://flagcdn.com/${dataContext.name}.svg`;
+            //return `https://flagcdn.com/${dataContext.name}.svg`;
+            return 'public/flags/' + dataContext.name + '.svg';
           }
           return src;
         });
@@ -160,21 +161,11 @@ function TrafficMap() {
   return (
     <Card cls="w-full h-full">
       <CardHeader>
-        <CardTitle value="Most Traffic Sent & Received" />
+        <CardTitle value="Top connected countries" />
       </CardHeader>
       <CardBody>
         <div className="w-full h-[calc(100%-40px)] relative">
           <div id="chartdiv" className="size-full"></div>
-        </div>
-        <div className="flex justify-center items-center gap-8 py-2">
-          <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
-            <div className="size-6 bg-[#11E4A6] rounded"></div>
-            <div>Inbound</div>
-          </div>
-          <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
-            <div className="size-6 bg-[#FF6E76] rounded"></div>
-            <div>Outbound</div>
-          </div>
         </div>
       </CardBody>
     </Card>
