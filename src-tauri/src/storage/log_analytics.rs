@@ -106,7 +106,6 @@ pub(crate) fn publish_stats(
                 let app_handle = app_handle_ref.lock().unwrap();
                 
                 let stats = get_stats(&basic_logs_store, &detailed_logs_store);
-                println!("Stats: {:?}", stats);
 
                 app_handle.emit(
                     "stats",
@@ -120,7 +119,6 @@ pub(crate) fn publish_stats(
 
 
 fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>) -> serde_json::Value {
-    println!("Getting stats...");
 
     if basic_logs_store.is_empty() {
         println!("No logs available.");

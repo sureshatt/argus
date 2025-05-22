@@ -64,7 +64,7 @@ function TrafficMap() {
           centerX: am5.p50,
           centerY: am5.p100, // Anchor at bottom center
           dy: -15, // Adjust pin position
-          tooltipHTML: "<font color='#11E4A6'>{count}</font>"
+          tooltipHTML: "<font color='#11E4A6'>{name}</font>"
         });
 
         // Create pin shape using SVG path
@@ -126,17 +126,22 @@ function TrafficMap() {
   const fetchData = async (country_stats: CountryStat[]) => {
     if (currentInterface && pointSeries) {
 
-      console.log("country stats", country_stats);
       const items = [
         ...country_stats.map((obj) => ({
           country: obj.country,
           name: obj.country.toLowerCase(),
-          count: obj.count,
-          t: "inbound",
         }))
       ];
-      pointSeries.data.clear();
-      pointSeries.data.pushAll(items);
+
+      items.forEach((item) => {
+        const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
+        if (!foundItem) {
+          pointSeries.data.push(item);
+        } else {
+          console.log("Item already exists in pointSeries data:", item);
+        }
+      });
+
     }
   };
 
