@@ -23,11 +23,10 @@ impl IpStat {
 #[derive(Serialize, Deserialize, Debug)]
 struct CountryStat {
     country: String,
-    count: usize,
 }
 impl CountryStat {
-    fn new(country: String, count: usize) -> Self {
-        CountryStat { country, count }
+    fn new(country: String) -> Self {
+        CountryStat { country }
     }
 }
 
@@ -214,7 +213,7 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
     let country_stats: Vec<CountryStat> = country_stats_sorted
         .into_iter()
         .take(10)
-        .map(|(country, count)| CountryStat::new(country, count))
+        .map(|(country, _)| CountryStat::new(country))
         .collect();
 
     let arp_stats: Vec<ArpStat> = arp_stats_map

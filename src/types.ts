@@ -159,8 +159,7 @@ export type IpStat = {
 }
 
 export type CountryStat = {
-    country: string,
-    count: number
+    country: string
 }
 
 export type ArpStat = {
