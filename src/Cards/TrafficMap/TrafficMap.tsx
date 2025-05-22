@@ -10,6 +10,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { CountryStat, NetworkStat } from "../../types";
+import "./style.css";
 
 function TrafficMap() {
   const currentInterface = useNetStore((state) => state.currentInterface);
@@ -64,7 +65,11 @@ function TrafficMap() {
           centerX: am5.p50,
           centerY: am5.p100, // Anchor at bottom center
           dy: -15, // Adjust pin position
-          tooltipHTML: "<font color='#11E4A6'>{name}</font>"
+          tooltipHTML: `
+          <div class="am5-custom-tooltip">
+            <p>{name}</p>
+          </div>
+          `
         });
 
         // Create pin shape using SVG path
@@ -129,7 +134,7 @@ function TrafficMap() {
       const items = [
         ...country_stats.map((obj) => ({
           country: obj.country,
-          name: obj.country.toLowerCase(),
+          name: obj.country.toUpperCase(),
         }))
       ];
 

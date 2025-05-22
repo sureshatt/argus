@@ -1,0 +1,11 @@
+.am5-custom-tooltip {
+  background: rgba(20, 45, 40, 0.9);
+  border: 0px;
+  color: rgba(120, 230, 250, 1);
+  font-family: "Quantico";
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 400;
+  transition: opacity 0.3s ease;
+  max-width: 220px;
+}
