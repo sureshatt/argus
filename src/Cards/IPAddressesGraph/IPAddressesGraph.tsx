@@ -38,11 +38,11 @@ function IPAddressesGraph() {
     if (!graphRef.current) {
       // Initialize graph if it doesn't exist
       graphRef.current = new Graph({
-        animation: true,
+        animation: true, // https://g6.antv.antgroup.com/en/manual/graph/option
         data: data as any,
         container: containerRef.current!,
         behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
-        autoFit: { type: "view" },
+        autoFit: { type: "center" },
         node: { // https://g6.antv.antgroup.com/en/manual/element/node/build-in/base-node#type
           type: "react",
           style: {
