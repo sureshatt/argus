@@ -11,6 +11,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { getDeviceTypeFromMac } from "../../utils/tools";
 
 register(ExtensionCategory.NODE, "react", ReactNode);
 
@@ -208,25 +209,29 @@ interface NodeProps {
 function Node({ data }: NodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
 
-  const getIcon = (source_ip: string, source_mac: string, center: boolean) => {
+  const getIcon = (ip: string, mac: string, center: boolean) => {
 
     if (center) {
       return "material-symbols:laptop-mac-outline"; // Default icon for center node
     }
-    
-    if( source_ip.endsWith(".1") || source_ip.endsWith(".254") ) {
+
+    if (ip.endsWith(".1") || ip.endsWith(".254")) {
       return "ic:baseline-router"; // Router icon for common gateway IPs
     }
 
-    const icons = [
-      "fluent:phone-32-filled",
-      "streamline:computer-pc-desktop-solid",
-      "solar:laptop-bold",
-      "bi:tv-fill",
-    ];
+    const type = getDeviceTypeFromMac(mac);
 
-    const rand = Math.round((Math.random() * 10) % 4);
-    return icons[rand];
+    if (type === "phone") {
+      return "fluent:phone-32-filled"; // Phone icon
+    } else if (type === "laptop") {
+      return "solar:laptop-bold"; // Laptop icon
+    } else if (type === "desktop") {
+      return "streamline:computer-pc-desktop-solid"; // Desktop icon
+    } else if (type === "tv") {
+      return "bi:tv-fill"; // TV icon
+    } else {
+      return "ri:device-fill";
+    }
   };
 
   if (data.id == "center") {
