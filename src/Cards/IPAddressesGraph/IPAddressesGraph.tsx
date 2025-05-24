@@ -66,7 +66,7 @@ function IPAddressesGraph() {
           },
         },
         layout: {
-          type: "d3-force",
+          type: "radial",
           link: {
             distance: 50,
             strength: 1,
@@ -228,7 +228,7 @@ function Node({ data }: NodeProps) {
     } else if (type === "desktop") {
       return "streamline:computer-pc-desktop-solid"; // Desktop icon
     } else if (type === "tv") {
-      return "bi:tv-fill"; // TV icon
+      return "solar:tv-bold-duotone"; // TV icon
     } else {
       return "ri:device-fill";
     }

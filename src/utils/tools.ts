@@ -18,6 +18,7 @@ const vendorMap: Record<string, { name: string; type: "phone" | "laptop" | "desk
   // TVs
   "cc:fa:00": { name: "LG", type: "tv" },
   "00:18:6b": { name: "Samsung", type: "tv" },
+  "24:4b:03": { name: "Samsung", type: "tv" },
 };
 
 export function getDeviceTypeFromMac(mac: string): "phone" | "laptop" | "desktop" | "tv" {
