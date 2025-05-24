@@ -143,10 +143,9 @@ function TrafficMap() {
         if (!foundItem) {
           pointSeries.data.push(item);
         } else {
-          console.log("Item already exists in pointSeries data:", item);
+          console.debug("Item already exists in pointSeries data:", item);
         }
       });
-
     }
   };
 

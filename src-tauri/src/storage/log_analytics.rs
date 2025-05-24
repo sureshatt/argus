@@ -5,7 +5,7 @@ use lru::LruCache;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{AppHandle, Emitter, Listener, State};
-use crate::AppState;
+use crate::{network::network_interface::{get_net_iface_by_name}, AppState};
 use crate::network::ip_utils::LOCAL_ORIGIN;
 use super::log_entry::BasicLogEntry;
 
@@ -89,22 +89,26 @@ pub(crate) fn publish_stats(
     let app_handle_ref = Arc::new(Mutex::new(app_handle.clone()));
     let basic_logs_store_arc = Arc::clone(&state.basic_logs_store);
     let detailed_logs_store_arc = Arc::clone(&state.detailed_logs_store);
+    let network_interface_arc = Arc::clone(&state.selected);
 
     app_handle.listen("publish_stats", {
         let basic_logs_store_ref_0 = Arc::clone(&basic_logs_store_arc);
         let detailed_logs_store_ref_0 = Arc::clone(&detailed_logs_store_arc);
+        let network_interface_ref_0 = Arc::clone(&network_interface_arc);
 
         move |_event| {
             let basic_logs_store_ref = Arc::clone(&basic_logs_store_ref_0);
             let detailed_logs_store_ref = Arc::clone(&detailed_logs_store_ref_0);
             let app_handle_ref = Arc::clone(&app_handle_ref);
+            let network_interface_ref = Arc::clone(&network_interface_ref_0);
 
             tauri::async_runtime::spawn(async move {
                 let basic_logs_store = basic_logs_store_ref.read().unwrap();
                 let detailed_logs_store = detailed_logs_store_ref.read().unwrap();
                 let app_handle = app_handle_ref.lock().unwrap();
-                
-                let stats = get_stats(&basic_logs_store, &detailed_logs_store);
+                let network_interface = network_interface_ref.read().unwrap();
+
+                let stats = get_stats(&basic_logs_store, &detailed_logs_store, &network_interface);
 
                 app_handle.emit(
                     "stats",
@@ -117,7 +121,7 @@ pub(crate) fn publish_stats(
 }
 
 
-fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>) -> serde_json::Value {
+fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &LruCache<u32, String>, network_interface_str: &String) -> serde_json::Value {
 
     if basic_logs_store.is_empty() {
         println!("No logs available.");
@@ -128,6 +132,9 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
             "top_destination_ip_counts": []
         });
     }
+
+    let network_interface = get_net_iface_by_name(network_interface_str);
+    let netcard_mac = network_interface.as_ref().map(|iface| iface.mac.clone()).unwrap_or_default();
 
     let mut protocol_stats_map: HashMap<String, usize> = HashMap::new();
     let mut ingress_ip_stat_map: HashMap<String, usize> = HashMap::new();
@@ -173,10 +180,14 @@ fn get_stats(basic_logs_store: &VecDeque<BasicLogEntry>, detailed_logs_store: &L
         if protocol == "ARP" {
             let npid = log_entry.npid.parse::<u32>();
             if let Some(json_str) = detailed_logs_store.peek(&npid.unwrap()) {
+
                 let json_value: serde_json::Value = serde_json::from_str(json_str).unwrap();
                 let source_mac = json_value["sender_hw_addr"].as_str().unwrap_or("");
-                let source_ip = json_value["sender_proto_addr"].as_str().unwrap_or("");
 
+                if netcard_mac == source_mac {
+                    continue;
+                }
+                let source_ip = json_value["sender_proto_addr"].as_str().unwrap_or("");
                 arp_stats_map.insert(source_ip.to_string(), source_mac.to_string());
             }
 

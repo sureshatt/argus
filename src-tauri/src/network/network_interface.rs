@@ -52,6 +52,15 @@ pub fn get_net_ifaces() -> Vec<NetIface> {
     return netface_list;
 }
 
+pub fn get_net_iface_by_name(name: &str) -> Option<NetIface> {
+    let interfaces = pnet::datalink::interfaces();
+    let netface = interfaces.iter().find(|iface| iface.name == name);
+    match netface {
+        Some(interface) => Some(NetIface::from_network_interface(interface)),
+        None => None,
+    }
+}
+
 fn get_mac_address(interface: &NetworkInterface) -> String {
     interface
     .mac

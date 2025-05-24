@@ -43,7 +43,7 @@ function IPAddressesGraph() {
         container: containerRef.current!,
         behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
         autoFit: { type: "view" },
-        node: {
+        node: { // https://g6.antv.antgroup.com/en/manual/element/node/build-in/base-node#type
           type: "react",
           style: {
             size: [40, 80],
@@ -103,15 +103,19 @@ function IPAddressesGraph() {
     }
   };
 
+  const center_arp_stat: ArpStat = {
+    source_mac: currentInterface?.mac || "",
+    source_ip: currentInterface?.ipv4_address?.split("/")[0] || "",
+  };
+
   const initialNode: GraphNode<ArpStat> = {
     id: "center",
-    data: {
-      source_mac: "",
-      source_ip: "",
-    },
+    data: center_arp_stat,
   };
 
   const createGraphData = (data: ArpStat[]) => {
+    console.log("initialNode", initialNode);
+    console.log("data", data);
     const nodes: GraphNode<ArpStat>[] = [initialNode];
     const edges: GraphEdge[] = [];
 
@@ -204,40 +208,58 @@ interface NodeProps {
 function Node({ data }: NodeProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
 
-  const getIcon = () => {
+  const getIcon = (source_ip: string, source_mac: string, center: boolean) => {
+
+    if (center) {
+      return "material-symbols:laptop-mac-outline"; // Default icon for center node
+    }
+    
+    if( source_ip.endsWith(".1") || source_ip.endsWith(".254") ) {
+      return "ic:baseline-router"; // Router icon for common gateway IPs
+    }
+
     const icons = [
       "fluent:phone-32-filled",
       "streamline:computer-pc-desktop-solid",
       "solar:laptop-bold",
       "bi:tv-fill",
-      "solar:wi-fi-router-minimalistic-bold",
     ];
 
     const rand = Math.round((Math.random() * 10) % 4);
     return icons[rand];
   };
 
-  return (
-    <div className="relative size-full flex flex-col" ref={nodeRef}>
-      <div className="peer">
-        {data.id == "center" ? (
+  if (data.id == "center") {
+    return (
+      <div className="relative size-full flex flex-col" ref={nodeRef}>
+        <div className="peer">
           <div className="flex justify-center items-center size-16 rounded-full bg-light-green-700">
-            <Icon icon="fontisto:earth" className="size-10 text-cyan-500" />
+            <Icon icon={getIcon(data.data.source_ip, data.data.source_mac, true)} className="size-10 text-cyan-500" />
           </div>
-        ) : (
-          <div className="flex justify-center items-center size-8 rounded-full bg-light-green-700">
-            <Icon icon={getIcon()} className="size-5 text-cyan-500" />
-          </div>
-        )}
-      </div>
-      {data.id != "center" ? (
+        </div>
         <div
-          className={`absolute top-9 peer-hover:z-[9999] hover:z-50 -translate-x-1/2 flex flex-col bg-light-green-700 w-fit rounded p-0.5 text-[10px] text-light-green leading-3`}
+          className={`absolute top-10 peer-hover:z-[9999] hover:z-50 translate-x-1/2 flex flex-col bg-light-green-700 w-fit rounded p-0.5 text-[8px] text-light-green leading-3`}
         >
           <p className="text-nowrap">{data.data.source_ip}</p>
           <p className="text-nowrap">{data.data.source_mac} (MAC)</p>
         </div>
-      ) : null}
-    </div>
-  );
+      </div>
+    );
+  } else {
+    return (
+      <div className="relative size-full flex flex-col" ref={nodeRef}>
+        <div className="peer">
+          <div className="flex justify-center items-center size-8 rounded-full bg-light-green-700">
+            <Icon icon={getIcon(data.data.source_ip, data.data.source_mac, false)} className="size-5 text-cyan-500" />
+          </div>
+        </div>
+        <div
+          className={`absolute top-9 peer-hover:z-[9999] hover:z-50 -translate-x-1/2 flex flex-col bg-light-green-700 w-fit rounded p-0.5 text-[8px] text-light-green leading-3`}
+        >
+          <p className="text-nowrap">{data.data.source_ip}</p>
+          <p className="text-nowrap">{data.data.source_mac} (MAC)</p>
+        </div>
+      </div>
+    );
+  }
 }
