@@ -115,8 +115,6 @@ function IPAddressesGraph() {
   };
 
   const createGraphData = (data: ArpStat[]) => {
-    console.log("initialNode", initialNode);
-    console.log("data", data);
     const nodes: GraphNode<ArpStat>[] = [initialNode];
     const edges: GraphEdge[] = [];
 

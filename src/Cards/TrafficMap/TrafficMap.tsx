@@ -142,8 +142,6 @@ function TrafficMap() {
         const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
         if (!foundItem) {
           pointSeries.data.push(item);
-        } else {
-          console.debug("Item already exists in pointSeries data:", item);
         }
       });
     }

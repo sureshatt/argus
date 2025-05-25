@@ -103,8 +103,6 @@ function MostTrafficIps() {
     const ingress = generateDataset(incoming, "in");
     const egress = generateDataset(outcoming, "out");
 
-    //console.log("ingress", ingress, "egress", egress);
-
     const labels = [...ingress.labels, ...egress.labels];
     const data = [...ingress.data, ...egress.data];
     const bg = [...ingress.colors, ...egress.colors];
@@ -121,7 +119,6 @@ function MostTrafficIps() {
         },
       ],
     };
-    //console.log("Done Bar");
     setData(newData);
   };
 

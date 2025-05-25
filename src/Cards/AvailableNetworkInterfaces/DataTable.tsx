@@ -73,11 +73,6 @@ function DataTable({}: Props) {
     })();
   }, []);
 
-  // useEffect(() => {
-  //   //console.log("selection", selectedInterface);
-  //   if (selectedInterface) setCurrentInterface(selectedInterface);
-  // }, [selectedInterface]);
-
   return (
     <div className="size-full font-quantic ">
       <table className="size-full table-auto border-collapse">
@@ -103,7 +98,7 @@ function DataTable({}: Props) {
               key={row.id}
               className="border-b-1 border-b-white/15 max-w-full  text-light-green text-sm h-9"
             >
-              {row.getVisibleCells().map((cell, index) => (
+              {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
                   className={`break-all whitespace-normal px-1  `}
