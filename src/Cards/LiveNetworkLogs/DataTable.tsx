@@ -141,7 +141,7 @@ function DataTable({ showTitle }: Props) {
       if (currentInterface) {
         setShow(true);
         showTitle(true);
-        //console.log("Current Interface", currentInterface);
+
         await Network.getNetworkLogs(currentInterface.name);
         unlisten = await listen("update", (d) => {
           const log = d.payload as Packet;
@@ -200,7 +200,7 @@ function DataTable({ showTitle }: Props) {
                   return;
                 }
                 setAutoViewNewLog(false);
-                setSelectedLog(row.original);
+                setSelectedLog(row.original); // TODO: Get the full log details
               }}
             />
           ))}
