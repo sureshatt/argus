@@ -36,15 +36,12 @@ function DataTable({ showTitle }: Props) {
       {
         header: "",
         accessorKey: "chevron",
-        cell: ({ row }) => {
-          const id = row.original.npid;
+        cell: ({ }) => {
           return (
             <div className="size-3 h-full flex justify-center items-center">
               <Icon
                 icon="teenyicons:right-solid"
-                className={`size-2 transition-all duration-300x ${
-                  id === selectedLog?.npid ? "rotate-90 " : ""
-                }`}
+                className="size-2 transition-all duration-300x"
               />
             </div>
           );
@@ -190,12 +187,12 @@ function DataTable({ showTitle }: Props) {
               row={row}
               isSelected={row.original.npid === selectedLog?.npid}
               onClick={() => {
-                if (selectedLog?.npid === row.original.npid) {
+                if (selectedLog?.npid === row.original.npid) { // unselect logic
                   setAutoViewNewLog(true);
                   return;
                 }
                 setAutoViewNewLog(false);
-                setSelectedLog(row.original); // TODO: Get the full log details
+                setSelectedLog(row.original); 
               }}
             />
           ))}
