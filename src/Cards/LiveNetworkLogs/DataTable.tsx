@@ -136,16 +136,14 @@ function DataTable({ showTitle }: Props) {
 
   useEffect(() => {
     let unlisten: UnlistenFn;
-    setData([]);
     (async () => {
       if (currentInterface) {
         setShow(true);
         showTitle(true);
 
         await Network.getNetworkLogs(currentInterface.name);
-        unlisten = await listen("update", (d) => {
+        unlisten = await listen("all_logs_event", (d) => {
           const log = d.payload as Packet;
-          if (autoViewNewLog) setSelectedLog(log);
           setData((prev) => {
             const updatedData = [log, ...prev];
             if (updatedData.length > MAX_ROWS) {
@@ -162,11 +160,8 @@ function DataTable({ showTitle }: Props) {
 
     return () => {
       if (unlisten) unlisten();
-      (async () => {
-        await Network.stopNetworkLogs();
-      })();
     };
-  }, [currentInterface, autoViewNewLog]);
+  }, [currentInterface]);
 
   return show ? (
     <div className="w-full  font-quantic">

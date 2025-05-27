@@ -135,8 +135,8 @@ function MostFoundNetProtocol() {
   };
 
 
-  let unlisten: UnlistenFn;
   useEffect(() => {
+    let unlisten: UnlistenFn;
     (async () => {
       unlisten = await listen("stats", (e) => {
         let networkStat = e.payload as NetworkStat;
