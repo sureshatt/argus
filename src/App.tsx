@@ -4,7 +4,7 @@ import AvailableNetworkInterface from "./Cards/AvailableNetworkInterfaces/Availa
 import IPAddressesGraph from "./Cards/IPAddressesGraph/IPAddressesGraph";
 import LiveNetworkLogs from "./Cards/LiveNetworkLogs/LiveNetworkLogs";
 import LogsJsonViewer from "./Cards/LogsJsonViewer/LogsJsonViewer";
-import MostFoundNetProtocol from "./Cards/MostFoundNetProtocol/MostFoundNetProtocol";
+import MostFoundNetProtocol from "./Cards/MostFoundNetProtocol/MostFoundNetProtocol-v2";
 import MostTrafficIps from "./Cards/MostTrafficIps/MostTrafficIps";
 import TrafficMap from "./Cards/TrafficMap/TrafficMap";
 
