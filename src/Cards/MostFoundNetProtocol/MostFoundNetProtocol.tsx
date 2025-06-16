@@ -158,7 +158,7 @@ function MostFoundNetProtocol() {
       {show ? (
         <>
           <CardHeader>
-            <CardTitle value="Most Found Network Protocol" />
+            <CardTitle value="Network Protocols" />
           </CardHeader>
           <CardBody>
             <div className=" size-full relative">
@@ -170,7 +170,7 @@ function MostFoundNetProtocol() {
         <CardBody>
           <Alert
             value={errors.no_interface_selected}
-            title="Most Found Network Protocol"
+            title="Network Protocols"
           />
         </CardBody>
       )}

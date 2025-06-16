@@ -150,7 +150,7 @@ function MostTrafficIps() {
       {show ? (
         <>
           <CardHeader>
-            <CardTitle value="Most Traffic Sent & Received" />
+            <CardTitle value="TOP IPs" />
           </CardHeader>
           <CardBody>
             <div className="w-full h-[calc(100%-40px)] relative">
@@ -159,11 +159,11 @@ function MostTrafficIps() {
             <div className="flex justify-center items-center gap-8 py-2">
               <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
                 <div className="size-6 bg-cyan-500 rounded"></div>
-                <div>Sent</div>
+                <div>Outgoing</div>
               </div>
               <div className="flex gap-2 justify-center items-center text-[#B8D6D0] font-semibold text-sm">
                 <div className="size-6 bg-[#3A4AFF] rounded"></div>
-                <div>Received</div>
+                <div>Incoming</div>
               </div>
             </div>
           </CardBody>

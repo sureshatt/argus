@@ -8,7 +8,7 @@ function AvailableNetworkInterface() {
   return (
     <Card cls="w-full h-full">
       <CardHeader>
-        <CardTitle value="Available Network Interfaces" />
+        <CardTitle value="Network Interfaces" />
       </CardHeader>
       <CardBody>
         <DataTable />
