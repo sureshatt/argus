@@ -9,14 +9,15 @@
 /// This example shows a basic packet logger using libpnet
 extern crate pnet;
 
-use pnet::datalink::Channel::Ethernet;
-use pnet::datalink::{self, NetworkInterface};
-use std::thread;
-use std::time::Duration;
-use tauri::{State, AppHandle};
+use crate::network::layers;
 use crate::network::network_interface::NetIface;
 use crate::{AppState, Counter};
-use crate::network::layers;
+use pnet::datalink::Channel::Ethernet;
+use pnet::datalink::{self, NetworkInterface};
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
+use tauri::{AppHandle, State};
 
 pub struct Context<'a> {
     pub interface: &'a NetIface,
@@ -40,7 +41,9 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
     let selected_clone = state.selected.clone();
     let sequence_generator = state.counter.clone();
     let geo_ip_ranges = state.geo_ip_ranges.clone();
-    let net_iface = NetIface::from_network_interface(&interface); 
+    let net_iface = NetIface::from_network_interface(&interface);
+    let basic_logs_store_arc = Arc::clone(&state.basic_logs_store);
+    let detailed_logs_store_arc = Arc::clone(&state.detailed_logs_store);
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -50,12 +53,15 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
     };
 
     thread::spawn(move || loop {
-
         // this logic kills the thread if the interface changes
         let read_selected = selected_clone.read().unwrap().clone();
-        if read_selected != "" && read_selected!= selection {
-            println!("Quitting the thread for: {}", selection);
-            return ;
+        if read_selected != "" && read_selected != selection {
+            let mut basic_logs_store = basic_logs_store_arc.write().unwrap();
+            let mut detailed_logs_store = detailed_logs_store_arc.write().unwrap();
+            basic_logs_store.clear();
+            detailed_logs_store.clear();
+            println!("Quitting the thread for: {} & clearning cache {} {}", selection, basic_logs_store.len(), detailed_logs_store.len());
+            return;
         }
 
         let counter = sequence_generator.read().unwrap();
@@ -63,7 +69,6 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
 
         match rx.next() {
             Ok(packet) => {
-
                 let parent_counter = counter.next();
                 let context = Context {
                     interface: &net_iface,
