@@ -124,7 +124,7 @@ function MostFoundNetProtocol() {
       labels,
       datasets: [
         {
-          label: "Dataset 1",
+          label: "Protocols",
           data,
           backgroundColor: "#3AE7FF",
           borderRadius: { topLeft: 10, topRight: 10 },
@@ -136,6 +136,10 @@ function MostFoundNetProtocol() {
 
 
   useEffect(() => {
+    // clear the chart when new interface is selected
+    const stat: ProtocolStat[] = [];
+    handleDataChange(stat);
+
     let unlisten: UnlistenFn;
     (async () => {
       unlisten = await listen("stats", (e) => {

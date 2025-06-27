@@ -131,33 +131,37 @@ function TrafficMap() {
   const fetchData = async (country_stats: CountryStat[]) => {
     if (currentInterface && pointSeries) {
 
-      const items = [
-        ...country_stats.map((obj) => ({
-          country: obj.country,
-          name: obj.country.toUpperCase(),
-        }))
-      ];
+    const items = [
+      ...country_stats.map((obj) => ({
+        country: obj.country,
+        name: obj.country.toUpperCase(),
+      }))
+    ];
 
-      items.forEach((item) => {
-        const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
-        if (!foundItem) {
-          pointSeries.data.push(item);
-        }
-      });
+    items.forEach((item) => {
+      const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
+      if (!foundItem) {
+        pointSeries.data.push(item);
+      }
+    });
     }
   };
 
- let unlisten: UnlistenFn;
   useEffect(() => {
+    if (pointSeries) { // clear the chart when new interface is selected
+      pointSeries.data.clear();
+    }
+    
+    let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface && pointSeries) {
 
         unlisten = await listen("stats", (e) => {
-        let networkStat = e.payload as NetworkStat;
-        let country_stats = networkStat.country_stats;
-        
-        fetchData(country_stats);
-      });
+          let networkStat = e.payload as NetworkStat;
+          let country_stats = networkStat.country_stats;
+
+          fetchData(country_stats);
+        });
       }
     })();
     return () => {

@@ -72,7 +72,7 @@ function MostTrafficIps() {
     labels: [],
     datasets: [
       {
-        label: "Most Traffic",
+        label: "IP Addresses",
         data: [],
         backgroundColor: "#3AE7FF",
         borderRadius: { bottomRight: 10, topRight: 10 },
@@ -123,25 +123,30 @@ function MostTrafficIps() {
   };
 
 
-  let unlisten: UnlistenFn;
   useEffect(() => {
+
+    const ingressInitial: IpStat[] = [];
+    const egressInitial: IpStat[] = []
+    handleDataChange(ingressInitial, egressInitial);
+
+    let unlisten: UnlistenFn;
     (async () => {
       if (selInterface) {
         setShow(true);
         unlisten = await listen("stats", (e) => {
-                let networkStat = e.payload as NetworkStat;
-                const ingress = networkStat.ingress_ip_stats;
-                const egress = networkStat.egress_ip_stats;
-                if (ingress.length > 0 && egress.length > 0) {
-                  setShow(true);
-                   handleDataChange(ingress, egress);
-                }
-              });
+          let networkStat = e.payload as NetworkStat;
+          const ingress = networkStat.ingress_ip_stats;
+          const egress = networkStat.egress_ip_stats;
+
+          setShow(true);
+          handleDataChange(ingress, egress);
+
+        });
       } else setShow(false);
-     })();
+    })();
 
     return () => {
-       if (unlisten) unlisten();
+      if (unlisten) unlisten();
     };
   }, [selInterface]);
 

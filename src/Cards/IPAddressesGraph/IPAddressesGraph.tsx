@@ -110,61 +110,53 @@ function IPAddressesGraph() {
   };
 
   const initialNode: GraphNode<ArpStat> = {
-    id: "center",
+    id: center_arp_stat.source_mac,
     data: center_arp_stat,
   };
 
   const createGraphData = (data: ArpStat[]) => {
+    console.log(initialNode);
     const nodes: GraphNode<ArpStat>[] = [initialNode];
     const edges: GraphEdge[] = [];
+
+    if (!data || data.length < 1) {
+      return { nodes, edges };
+    }
 
     data.forEach((d) => {
       nodes.push({ id: d.source_mac, data: d });
       edges.push({
-        id: `${d.source_mac}-to-center`,
+        id: `${d.source_mac}-to-${initialNode.id}`,
         source: d.source_mac,
-        target: "center",
+        target: initialNode.id,
       });
     });
     return { nodes, edges };
   };
 
-  let unlisten: UnlistenFn;
-  
-  const fetchData = async () => {
-    if (currentInterface) {
-      unlisten = await listen("stats", async (e) => {
-        let networkStat = e.payload as NetworkStat;
-        let arp_stats = networkStat.arp_stats;
-        if (arp_stats.length > 0) {
-          const graphData = createGraphData(arp_stats);
-          await drawTopology(graphData);
-        }
-      });
-    }
+  const fetchData = async (arp_stats: ArpStat[]) => {
+    const graphData = createGraphData(arp_stats);
+    await drawTopology(graphData);
   };
 
   useEffect(() => {
+    // clear the graph if the interface changes
+    //const arp_stats_initial: ArpStat[] = [];
+    //fetchData(arp_stats_initial);
+    graphRef.current?.clear();
+
+    let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface) {
-        setShow(true);
-        await fetchData();
-      } else if (show) {
-        setShow(false);
-        // Clean up graph when interface is unset
-        if (graphRef.current) {
-          graphRef.current.destroy();
-          graphRef.current = null;
-        }
+        unlisten = await listen("stats", async (e) => {
+          let networkStat = e.payload as NetworkStat;
+          let arp_stats = networkStat.arp_stats;
+          fetchData(arp_stats);
+        });
       }
     })();
     return () => {
       if (unlisten) unlisten();
-      // Clean up graph on unmount
-      if (graphRef.current) {
-        graphRef.current.destroy();
-        graphRef.current = null;
-      }
     };
   }, [currentInterface]);
 
