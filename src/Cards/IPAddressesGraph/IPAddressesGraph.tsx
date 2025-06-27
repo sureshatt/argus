@@ -115,7 +115,6 @@ function IPAddressesGraph() {
   };
 
   const createGraphData = (data: ArpStat[]) => {
-    console.log(initialNode);
     const nodes: GraphNode<ArpStat>[] = [initialNode];
     const edges: GraphEdge[] = [];
 
@@ -140,19 +139,19 @@ function IPAddressesGraph() {
   };
 
   useEffect(() => {
-    // clear the graph if the interface changes
-    //const arp_stats_initial: ArpStat[] = [];
-    //fetchData(arp_stats_initial);
     graphRef.current?.clear();
 
     let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface) {
+        setShow(true)
         unlisten = await listen("stats", async (e) => {
           let networkStat = e.payload as NetworkStat;
           let arp_stats = networkStat.arp_stats;
           fetchData(arp_stats);
         });
+      } else {
+        setShow(false);
       }
     })();
     return () => {

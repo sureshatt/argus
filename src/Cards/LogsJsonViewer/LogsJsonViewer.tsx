@@ -6,11 +6,10 @@ import { useNetStore } from "../../stores/net.store";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { useEffect, useState } from "react";
-import { Packet } from "../../types";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 function LogsJsonViewer() {
-  const [currentLog, setCurrentLog] = useState<Packet>();
+  const [currentLog, setCurrentLog] = useState<JSON>();
   const [show, setShow] = useState(false);
   const selectedInterface = useNetStore((state) => state.currentInterface);
   const selectedLog = useNetStore((state) => state.selectedLog);
@@ -20,10 +19,11 @@ function LogsJsonViewer() {
     let unlisten: UnlistenFn;
 
     (async () => {
-
         if (selectedInterface && autoViewNewLog) {
+          setCurrentLog(JSON.parse('{}'));
+
           unlisten = await listen("all_logs_event", (e) => {
-            const log = e.payload as Packet;    
+            const log = e.payload as JSON;    
               setCurrentLog(log);
               setShow(true);
           });

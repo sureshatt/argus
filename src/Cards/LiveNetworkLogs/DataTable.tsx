@@ -132,6 +132,13 @@ function DataTable({ showTitle }: Props) {
   });
 
   useEffect(() => {
+
+    setData(() => {
+      const data: Packet[] = [];
+      return data;
+    });
+
+
     let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface) {
