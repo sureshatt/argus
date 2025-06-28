@@ -4,8 +4,6 @@ import CardBody from "../../components/card/CardBody";
 import CardHeader from "../../components/card/CardHeader";
 import CardTitle from "../../components/card/CardTitle";
 import DataTable from "./DataTable";
-import Alert from "../../components/alert/Alert";
-import { errors } from "../../errors";
 
 function LiveNetworkLogs() {
   const [show, setShow] = useState(false);
