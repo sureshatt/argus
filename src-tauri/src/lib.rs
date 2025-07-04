@@ -61,7 +61,7 @@ pub async fn run() {
 
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
     let detailed_logs_store: LruCache<u32, String> = LruCache::new(NonZero::new(max_number_of_logs).unwrap());
-    let geo_ip_ranges = load_ip_ranges("dbip-country-lite.csv").unwrap(); // https://db-ip.com/db/
+    let geo_ip_ranges = load_ip_ranges().unwrap(); 
 
     let app_state = AppState {
         selected: Arc::new(RwLock::new("".to_string())),

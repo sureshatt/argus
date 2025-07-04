@@ -2,14 +2,13 @@ use std::net::IpAddr;
 use ipnetwork::IpNetwork;
 use pnet::ipnetwork;
 use std::error::Error;
-use std::fs::File;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use serde::Deserialize;
 
 
 pub const LOCAL_ORIGIN: &str = "local";
-
+const CSV_DATA: &str = include_str!("../../assets/data.csv"); // https://db-ip.com/db/
 
 pub fn ip_in_any_cidr(ip_str: &str, cidr_list: &[String]) -> bool {
     let ip: IpAddr = match ip_str.parse() {
@@ -45,9 +44,9 @@ fn ip_to_u32(ip: &str) -> Option<u32> {
     Ipv4Addr::from_str(ip).ok().map(u32::from)
 }
 
-pub fn load_ip_ranges(path: &str) -> Result<Vec<IpRange>, Box<dyn Error>> {
-    let file = File::open(path)?;
-    let mut rdr = csv::Reader::from_reader(file);
+pub fn load_ip_ranges() -> Result<Vec<IpRange>, Box<dyn Error>> {
+    
+    let mut rdr = csv::Reader::from_reader(CSV_DATA.as_bytes());
     let mut ranges = Vec::new();
 
     for result in rdr.deserialize() {
