@@ -1,23 +1,19 @@
 mod network;
 mod storage;
+use log::{error, info};
 use lru::LruCache;
 use network::ip_utils::load_ip_ranges;
 use network::network_dumper::dump;
 use network::network_interface::{get_net_ifaces, NetIface};
 use std::collections::VecDeque;
-use std::fs;
 use std::num::NonZero;
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use storage::log_analytics::{get_packet_data, publish_stats};
 use storage::log_entry::BasicLogEntry;
 use storage::logger::listen_to_event;
 use tauri::{Manager, State};
-use tracing::{info, error};
-use tracing_appender::rolling;
-use tracing_subscriber::{fmt, EnvFilter};
-use dir::home_dir;
+use tauri_plugin_log::{Builder, RotationStrategy, Target, TargetKind};
 
 #[derive(Clone)]
 struct AppState {
@@ -68,8 +64,6 @@ impl Counter {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
-    init_logging();
-    
     let max_number_of_logs = 1000;
     let cap = match NonZero::new(max_number_of_logs) {
         Some(c) => c,
@@ -78,12 +72,13 @@ pub async fn run() {
             return;
         }
     };
-    info!("Starting Argus application with max logs: {}", max_number_of_logs);
-    
-    let detailed_logs_store: LruCache<u32, String> =
-    LruCache::new(cap);
-    
-    
+    info!(
+        "Starting Argus application with max logs: {}",
+        max_number_of_logs
+    );
+
+    let detailed_logs_store: LruCache<u32, String> = LruCache::new(cap);
+
     let sq_counter = Counter::new();
     let geo_ip_ranges = load_ip_ranges().unwrap();
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
@@ -97,7 +92,21 @@ pub async fn run() {
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
         .manage(app_state)
+        .plugin(
+            Builder::new()// https://v2.tauri.app/plugin/logging/
+                .targets([
+                    Target::new(TargetKind::LogDir {
+                        file_name: Some("logs".to_string()),
+                    }),
+                    Target::new(TargetKind::Stdout),
+                ])
+                .max_file_size(10 * 1024 * 1024) // 10 MB
+                .level(log::LevelFilter::Debug)
+                .rotation_strategy(RotationStrategy::KeepSome(5))
+                .build(),
+        )
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             get_network_interfaces,
@@ -115,30 +124,6 @@ pub async fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
 
-fn init_logging() {
-    let log_dir = macos_log_dir("argus");
-    fs::create_dir_all(&log_dir).expect("Failed to create log directory");
-
-    let file_appender = rolling::daily(log_dir, "app.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-
-    // Optionally store `_guard` in a global/static so it's not dropped
-    std::mem::forget(_guard); // simple way to retain it
-
-    fmt()
-        .with_writer(non_blocking)
-        .with_env_filter(EnvFilter::from_default_env().add_directive("info".parse().unwrap()))
-        .init();
-
-    tracing::info!("Argus file logger initialized");
-}
-
-fn macos_log_dir(app_name: &str) -> PathBuf {
-    let mut path = home_dir().expect("Could not determine home directory");
-    path.push("Library");
-    path.push("Logs");
-    path.push(app_name);
-    path
+    info!("Argus application has started successfully");
 }

@@ -1,5 +1,6 @@
 import { HTMLProps, useEffect, useRef, useState } from "react";
 import { NetworkInterface } from "../../types";
+import { warn, debug, info, error } from '@tauri-apps/plugin-log';
 
 import {
   ColumnDef,
@@ -69,6 +70,16 @@ function DataTable({}: Props) {
   useEffect(() => {
     (async () => {
       const d = await Network.getAvailableNetworkInterfaces();
+      if (d === undefined) {
+        error("Failed to fetch network interfaces");
+        return;
+      }
+      if (d.length === 0) {
+        warn("No network interfaces found");
+        return;
+      }
+      info(`Found ${d.length} network interfaces`);
+      debug(`Network interfaces: ${JSON.stringify(d)}`);
       setData(d);
     })();
   }, []);
