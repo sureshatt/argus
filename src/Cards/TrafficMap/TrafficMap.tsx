@@ -108,7 +108,8 @@ function TrafficMap() {
           const dataContext = target.dataItem?.dataContext as any;
           if (dataContext?.country) {
             //return `https://flagcdn.com/${dataContext.name}.svg`;
-            return 'public/flags/' + dataContext.name + '.svg';
+            let countryCode = dataContext.country.toLowerCase();
+            return '/flags/' + countryCode + '.svg';
           }
           return src;
         });
@@ -131,19 +132,19 @@ function TrafficMap() {
   const fetchData = async (country_stats: CountryStat[]) => {
     if (currentInterface && pointSeries) {
 
-    const items = [
-      ...country_stats.map((obj) => ({
-        country: obj.country,
-        name: obj.country.toUpperCase(),
-      }))
-    ];
+      const items = [
+        ...country_stats.map((obj) => ({
+          country: obj.country,
+          name: obj.country.toUpperCase(),
+        }))
+      ];
 
-    items.forEach((item) => {
-      const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
-      if (!foundItem) {
-        pointSeries.data.push(item);
-      }
-    });
+      items.forEach((item) => {
+        const foundItem = pointSeries.data.values.find((i: any) => i.country === item.country);
+        if (!foundItem) {
+          pointSeries.data.push(item);
+        }
+      });
     }
   };
 
@@ -151,7 +152,7 @@ function TrafficMap() {
     if (pointSeries) { // clear the chart when new interface is selected
       pointSeries.data.clear();
     }
-    
+
     let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface && pointSeries) {
