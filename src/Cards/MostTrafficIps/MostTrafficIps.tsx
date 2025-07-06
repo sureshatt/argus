@@ -3,7 +3,6 @@ import Card from "../../components/card/Card";
 import CardBody from "../../components/card/CardBody";
 import CardHeader from "../../components/card/CardHeader";
 import CardTitle from "../../components/card/CardTitle";
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,6 +18,7 @@ import { BarCharData, IpStat, NetworkStat } from "../../types";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { warn, debug, info, error } from '@tauri-apps/plugin-log';
 
 ChartJS.register(
   CategoryScale,
@@ -100,6 +100,7 @@ function MostTrafficIps() {
   };
 
   const handleDataChange = (incoming: IpStat[], outcoming: IpStat[]) => {
+    // Ensure incoming and outcoming are defined and not null
     const ingress = generateDataset(incoming, "in");
     const egress = generateDataset(outcoming, "out");
 
@@ -125,27 +126,50 @@ function MostTrafficIps() {
 
   useEffect(() => {
 
+    debug("useEffect triggered with interface change. Resetting ingress and egress stats");
     const ingressInitial: IpStat[] = [];
-    const egressInitial: IpStat[] = []
+    const egressInitial: IpStat[] = [];
     handleDataChange(ingressInitial, egressInitial);
 
     let unlisten: UnlistenFn;
     (async () => {
       if (selInterface) {
         setShow(true);
-        unlisten = await listen("stats", (e) => {
-          let networkStat = e.payload as NetworkStat;
-          const ingress = networkStat.ingress_ip_stats;
-          const egress = networkStat.egress_ip_stats;
+        try {
+          unlisten = await listen("stats", (e) => {
+            try {
 
-          setShow(true);
-          handleDataChange(ingress, egress);
+              if (!e || !e.payload) {
+                warn("No payload received in stats event");
+                return;
+              }
 
-        });
-      } else setShow(false);
+              let networkStat = e.payload as NetworkStat;
+              const ingress = networkStat.ingress_ip_stats;
+              const egress = networkStat.egress_ip_stats;
+
+              if (!ingress || !egress) {
+                warn("Ingress or Egress stats are undefined");
+                return;
+              }
+
+              setShow(true);
+              handleDataChange(ingress, egress);
+            } catch (innerError) {
+              error("Error inside event listener callback: " + String(innerError));
+            }
+          });
+        } catch (err) {
+          error("Error setting up listener: " + String(err));
+        }
+      } else {
+        setShow(false);
+      }
     })();
 
     return () => {
+      info("Cleaning up listener for stats event");
+      setShow(false);
       if (unlisten) unlisten();
     };
   }, [selInterface]);
