@@ -12,6 +12,7 @@ import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { getDeviceTypeFromMac } from "../../utils/tools";
+import { warn, info, error, trace } from '@tauri-apps/plugin-log';
 
 register(ExtensionCategory.NODE, "react", ReactNode);
 
@@ -36,8 +37,15 @@ function IPAddressesGraph() {
   const drawTopology = async (data: any) => {
     if (!data) return;
 
+    if (data.nodes.length < 1) {
+      warn("No nodes found in ARP stats data, quitting.");
+      return;
+    }
+
     if (!graphRef.current) {
       // Initialize graph if it doesn't exist
+      info("Initializing the ARP graph ");
+
       graphRef.current = new Graph({
         animation: true, // https://g6.antv.antgroup.com/en/manual/graph/option
         data: data as any,
@@ -76,9 +84,16 @@ function IPAddressesGraph() {
         },
       });
       await graphRef.current.render();
+
     } else {
       // Update existing graph data
       let existingData = graphRef.current.getData();
+
+      if (!existingData) {
+        warn("No existing data found in ARP graph, Skipping update.");
+        return;
+      }
+
       let existingNodes = existingData.nodes;
       let newNodes = data.nodes.filter((node: GraphNode<any>) =>
         existingNodes.every((existingNode) => existingNode.id !== node.id)
@@ -139,22 +154,46 @@ function IPAddressesGraph() {
   };
 
   useEffect(() => {
+
+    info("IPAddressesGraph triggered with interface change. Resetting ARP stats graph");
     graphRef.current?.clear();
 
     let unlisten: UnlistenFn;
     (async () => {
+
       if (currentInterface) {
-        setShow(true)
-        unlisten = await listen("stats", async (e) => {
-          let networkStat = e.payload as NetworkStat;
-          let arp_stats = networkStat.arp_stats;
-          fetchData(arp_stats);
-        });
+        setShow(true);
+        try {
+          unlisten = await listen("stats", async (e) => {
+            try {
+              let networkStat = e.payload as NetworkStat;
+
+              if (!networkStat || !networkStat.arp_stats) {
+                warn("No Network stats received in stats event");
+                return;
+              }
+
+              let arp_stats = networkStat.arp_stats;
+              if (!arp_stats) { // size check should NOT be done. With size 0, initial node will be drawn
+                trace("No ARP stats available");
+                return;
+              }
+
+              fetchData(arp_stats);
+            } catch (err) {
+              warn("Error processing stats event: " + String(err));
+            }
+          });
+        } catch (err) {
+          error("Error listening for stats:" + String(err));
+        }
       } else {
         setShow(false);
       }
     })();
     return () => {
+      setShow(false);
+      info("Cleaning up listener for stats event in IPAddressesGraph");
       if (unlisten) unlisten();
     };
   }, [currentInterface]);

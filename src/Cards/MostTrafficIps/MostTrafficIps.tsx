@@ -18,7 +18,7 @@ import { BarCharData, IpStat, NetworkStat } from "../../types";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { warn, debug, info, error } from '@tauri-apps/plugin-log';
+import { warn, info, error } from '@tauri-apps/plugin-log';
 
 ChartJS.register(
   CategoryScale,
@@ -126,7 +126,7 @@ function MostTrafficIps() {
 
   useEffect(() => {
 
-    debug("useEffect triggered with interface change. Resetting ingress and egress stats");
+    info("MostTrafficIps triggered with interface change. Resetting ingress and egress stats");
     const ingressInitial: IpStat[] = [];
     const egressInitial: IpStat[] = [];
     handleDataChange(ingressInitial, egressInitial);
@@ -168,7 +168,7 @@ function MostTrafficIps() {
     })();
 
     return () => {
-      info("Cleaning up listener for stats event");
+      info("Cleaning up listener for stats event in MostTrafficIps");
       setShow(false);
       if (unlisten) unlisten();
     };
