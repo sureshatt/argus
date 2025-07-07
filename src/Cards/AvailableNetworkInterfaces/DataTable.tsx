@@ -15,8 +15,6 @@ interface Props {}
 
 function DataTable({}: Props) {
   const [data, setData] = useState<NetworkInterface[]>([]);
-  // const [selectedInterface, setSelectedInterface] =
-  //   useState<NetworkInterface>();
 
   const { setCurrentInterface, currentInterface } = useNetStore();
 

@@ -19,6 +19,7 @@ import { BarCharData, NetworkStat, ProtocolStat } from "../../types";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { warn, info, error } from '@tauri-apps/plugin-log';
 
 ChartJS.register(
   CategoryScale,
@@ -136,22 +137,44 @@ function MostFoundNetProtocol() {
 
 
   useEffect(() => {
+    info("MostFoundNetProtocol triggered with interface change. Resetting protocol stats");
     // clear the chart when new interface is selected
     const stat: ProtocolStat[] = [];
     handleDataChange(stat);
 
     let unlisten: UnlistenFn;
     (async () => {
-      unlisten = await listen("stats", (e) => {
-        let networkStat = e.payload as NetworkStat;
-        let protocol_stats = networkStat.protocol_stats;
-        if (protocol_stats.length > 0) {
-          setShow(true);
-          handleDataChange(protocol_stats);
+      if (selInterface) {
+        setShow(true);
+        try {
+          unlisten = await listen("stats", (e) => {
+            try {
+
+              let networkStat = e.payload as NetworkStat;
+              if (!networkStat || !networkStat.protocol_stats) {
+                warn("No payload received in stats event");
+                return;
+              }
+
+              let protocol_stats = networkStat.protocol_stats;
+              if (protocol_stats && protocol_stats.length > 0) {
+                setShow(true);
+                handleDataChange(protocol_stats);
+              }
+            } catch (err) {
+              error("Error inside event listener callback: " + String(err));
+            }
+          });
+        } catch (err) {
+          error("Error setting up listener: " + String(err));
         }
-      });
+      } else {
+        setShow(false);
+      }
     })();
     return () => {
+      info("Cleaning up listener for stats event in MostFoundNetProtocol");
+      setShow(false);
       if (unlisten) unlisten();
     };
 
