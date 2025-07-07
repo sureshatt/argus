@@ -7,6 +7,7 @@ import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
 import { useEffect, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { error, info, warn } from "@tauri-apps/plugin-log";
 
 function LogsJsonViewer() {
   const [currentLog, setCurrentLog] = useState<JSON>();
@@ -16,21 +17,33 @@ function LogsJsonViewer() {
   const autoViewNewLog = useNetStore((state) => state.autoViewNewLog);
 
   useEffect(() => {
+    info("LogsJsonViewer triggered with interface change. Resetting current log");
     let unlisten: UnlistenFn;
 
     (async () => {
-        if (selectedInterface && autoViewNewLog) {
-          setCurrentLog(JSON.parse('{}'));
+      if (selectedInterface && autoViewNewLog) {
+        setCurrentLog(JSON.parse('{}'));
 
+        try {
           unlisten = await listen("all_logs_event", (e) => {
-            const log = e.payload as JSON;    
-              setCurrentLog(log);
-              setShow(true);
+
+            if (!e || !e.payload) {
+              warn("No payload received in all_logs_event");
+              return;
+            }
+
+            const log = e.payload as JSON;
+            setCurrentLog(log);
+            setShow(true);
           });
-        } else {
-          setCurrentLog(undefined);
-          setShow(false);
+        } catch (err) {
+          error("Error fetching network logs:" + String(err));
         }
+
+      } else {
+        setCurrentLog(undefined);
+        setShow(false);
+      }
     })();
 
     return () => {

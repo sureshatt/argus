@@ -13,6 +13,7 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import CardBody from "../../components/card/CardBody";
 import Alert from "../../components/alert/Alert";
 import { errors } from "../../errors";
+import { warn, info, error } from '@tauri-apps/plugin-log';
 
 interface Props {
   showTitle: (value: boolean) => void;
@@ -102,13 +103,11 @@ function DataTable({ showTitle }: Props) {
       onClick: () => void;
     }) => (
       <tr
-        className={`border-b-1 border-b-white/15 text-sm ${
-          isSelected
-            ? `text-[#EDEEEE] ${
-                !autoViewNewLog ? "sticky bottom-1 bg-light-green-100" : ""
-              }`
-            : "text-light-green"
-        }`}
+        className={`border-b-1 border-b-white/15 text-sm ${isSelected
+          ? `text-[#EDEEEE] ${!autoViewNewLog ? "sticky bottom-1 bg-light-green-100" : ""
+          }`
+          : "text-light-green"
+          }`}
         onClick={onClick}
       >
         {row.getVisibleCells().map((cell: any) => (
@@ -133,11 +132,11 @@ function DataTable({ showTitle }: Props) {
 
   useEffect(() => {
 
+    info("LiveNetworkLogs triggered with interface change. Resetting data");
     setData(() => {
       const data: Packet[] = [];
       return data;
     });
-
 
     let unlisten: UnlistenFn;
     (async () => {
@@ -145,17 +144,28 @@ function DataTable({ showTitle }: Props) {
         setShow(true);
         showTitle(true);
 
-        await Network.getNetworkLogs(currentInterface.name);
-        unlisten = await listen("all_logs_event", (d) => {
-          const log = d.payload as Packet;
-          setData((prev) => {
-            const updatedData = [log, ...prev];
-            if (updatedData.length > MAX_ROWS) {
-              updatedData.pop(); 
+        try {
+          await Network.getNetworkLogs(currentInterface.name);
+          unlisten = await listen("all_logs_event", (d) => {
+
+            if (!d || !d.payload) {
+              warn("No payload received in all_logs_event");
+              return;
             }
-            return updatedData;
+
+            const log = d.payload as Packet;
+            setData((prev) => {
+              const updatedData = [log, ...prev];
+              if (updatedData.length > MAX_ROWS) {
+                updatedData.pop();
+              }
+              return updatedData;
+            });
           });
-        });
+        } catch (err) {
+          error("Error fetching network logs:" + String(err));
+        }
+
       } else {
         setShow(false);
         showTitle(false);
@@ -163,6 +173,8 @@ function DataTable({ showTitle }: Props) {
     })();
 
     return () => {
+      info("Cleaning up listener for stats event in LiveNetworkLogs");
+      setShow(false);
       if (unlisten) unlisten();
     };
   }, [currentInterface]);
@@ -178,9 +190,9 @@ function DataTable({ showTitle }: Props) {
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                 </th>
               ))}
             </tr>
@@ -199,7 +211,7 @@ function DataTable({ showTitle }: Props) {
                   return;
                 }
                 setAutoViewNewLog(false);
-                setSelectedLog(row.original); 
+                setSelectedLog(row.original);
               }}
             />
           ))}
