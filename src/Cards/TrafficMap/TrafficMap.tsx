@@ -11,6 +11,7 @@ import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { CountryStat, NetworkStat } from "../../types";
 import "./style.css";
+import { error, info, warn } from "@tauri-apps/plugin-log";
 
 function TrafficMap() {
   const currentInterface = useNetStore((state) => state.currentInterface);
@@ -149,6 +150,7 @@ function TrafficMap() {
   };
 
   useEffect(() => {
+    info("TrafficMap triggered with interface change. Resetting pointSeries data");
     if (pointSeries) { // clear the chart when new interface is selected
       pointSeries.data.clear();
     }
@@ -156,16 +158,31 @@ function TrafficMap() {
     let unlisten: UnlistenFn;
     (async () => {
       if (currentInterface && pointSeries) {
+        try {
+          unlisten = await listen("stats", (e) => {
 
-        unlisten = await listen("stats", (e) => {
-          let networkStat = e.payload as NetworkStat;
-          let country_stats = networkStat.country_stats;
+            if (!e || !e.payload) {
+              error("No payload received in stats event");
+              return;
+            }
 
-          fetchData(country_stats);
-        });
+            let networkStat = e.payload as NetworkStat;
+            let country_stats = networkStat.country_stats;
+
+            if (!country_stats) {
+              warn("No country stats received in stats event");
+              return;
+            }
+
+            fetchData(country_stats);
+          });
+        } catch (err) {
+          error("Error fetching network stats: " + String(err));
+        }
       }
     })();
     return () => {
+      info("Cleaning up listener for stats event in TrafficMap");
       if (unlisten) unlisten();
     };
   }, [currentInterface]);

@@ -47,6 +47,8 @@ function LogsJsonViewer() {
     })();
 
     return () => {
+      info("Cleaning up listener for stats event in LogsJsonViewer");
+      setShow(false);
       if (unlisten) unlisten();
     };
   }, [selectedInterface]);
