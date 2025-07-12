@@ -1,5 +1,6 @@
 use crate::network::network_dumper::Context;
 use chrono::Utc;
+use log::{error, warn};
 use pnet::packet::{
     icmp::{
         destination_unreachable::DestinationUnreachablePacket, echo_reply::EchoReplyPacket,
@@ -57,7 +58,6 @@ impl From<u8> for IcmpPacketType {
 }
 
 impl ToString for IcmpPacketType {
-
     fn to_string(&self) -> String {
         match self {
             IcmpPacketType::EchoReply => "Echo Reply",
@@ -80,7 +80,6 @@ impl ToString for IcmpPacketType {
         }
         .to_string()
     }
-    
 }
 
 pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> {
@@ -91,7 +90,13 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
     if let Some(icmp_packet) = icmp_packet {
         match icmp_packet.get_icmp_type() {
             IcmpTypes::EchoReply => {
-                let icmp_echo_reply = EchoReplyPacket::new(icmp_packet.packet()).unwrap();
+                let icmp_echo_reply = match EchoReplyPacket::new(icmp_packet.packet()) {
+                    Some(packet) => packet,
+                    None => {
+                        error!("Failed to parse ICMP Echo Reply");
+                        return Err("Failed to parse ICMP Echo Reply".into());
+                    }
+                };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -114,7 +119,13 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                 let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             IcmpTypes::EchoRequest => {
-                let icmp_echo_request = EchoRequestPacket::new(icmp_packet.packet()).unwrap();
+                let icmp_echo_request = match EchoRequestPacket::new(icmp_packet.packet()) {
+                    Some(packet) => packet,
+                    None => {
+                        error!("Failed to parse ICMP Echo Request");
+                        return Err("Failed to parse ICMP Echo Request".into());
+                    }
+                };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -138,7 +149,13 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
             }
             IcmpTypes::DestinationUnreachable => {
                 let icmp_destination_unreachable =
-                    DestinationUnreachablePacket::new(icmp_packet.packet()).unwrap();
+                    match DestinationUnreachablePacket::new(icmp_packet.packet()) {
+                        Some(packet) => packet,
+                        None => {
+                            error!("Failed to parse ICMP Destination Unreachable");
+                            return Err("Failed to parse ICMP Destination Unreachable".into());
+                        }
+                    };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -162,7 +179,13 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
             }
             IcmpTypes::TimeExceeded => {
                 let icmp_time_exceeded =
-                    DestinationUnreachablePacket::new(icmp_packet.packet()).unwrap();
+                    match DestinationUnreachablePacket::new(icmp_packet.packet()) {
+                        Some(packet) => packet,
+                        None => {
+                            error!("Failed to parse ICMP Time Exceeded");
+                            return Err("Failed to parse ICMP Time Exceeded".into());
+                        }
+                    };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -185,7 +208,6 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                 let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             _ => {
-
                 let icmp_type: IcmpPacketType = icmp_packet.get_icmp_type().0.into();
 
                 let icmp_json = json!({
@@ -196,7 +218,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
                     "source": source.to_string(),
                     "destination": destination.to_string(),
                     "length": icmp_packet.packet().len().to_string(),
-                    "info":  icmp_type.to_string(),  
+                    "info":  icmp_type.to_string(),
                     "interface": context.interface.name.to_string(),
                     "icmp_type": icmp_packet.get_icmp_type().0.to_string(),
                     "icmp_code": icmp_packet.get_icmp_code().0.to_string(),
@@ -208,7 +230,7 @@ pub fn parse(ipv4_packet: &Ipv4Packet, context: &Context) -> Result<(), String> 
             }
         }
     } else {
-        println!(
+        warn!(
             "[{}]: Malformed ICMPv6 Packet",
             context.interface.name.to_string()
         );

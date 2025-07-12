@@ -1,9 +1,12 @@
 use crate::network::network_dumper::Context;
 use chrono::Utc;
+use log::{error, warn};
 use pnet::packet::{
     icmpv6::{
         echo_reply::EchoReplyPacket, echo_request::EchoRequestPacket, Icmpv6Packet, Icmpv6Types,
-    }, ipv6::Ipv6Packet, Packet
+    },
+    ipv6::Ipv6Packet,
+    Packet,
 };
 use serde_json::json;
 use tauri::Emitter;
@@ -141,9 +144,10 @@ impl ToString for Icmpv6PacketType {
             Icmpv6PacketType::HandoverKeyMessage => "Handover Key Message",
             Icmpv6PacketType::MobileNodeIdentifier => "Mobile Node Identifier",
             Icmpv6PacketType::RPLMessage => "RPL Message",
-            Icmpv6PacketType::Unknown => "Unknown", 
-    }.to_string()
-}
+            Icmpv6PacketType::Unknown => "Unknown",
+        }
+        .to_string()
+    }
 }
 
 pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> {
@@ -154,7 +158,13 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
     if let Some(icmpv6_packet) = icmpv6_packet {
         match icmpv6_packet.get_icmpv6_type() {
             Icmpv6Types::EchoReply => {
-                let icmpv6_echo_reply = EchoReplyPacket::new(icmpv6_packet.packet()).unwrap();
+                let icmpv6_echo_reply = match EchoReplyPacket::new(icmpv6_packet.packet()) {
+                    Some(packet) => packet,
+                    None => {
+                        error!("Failed to parse ICMPv6 Echo Reply");
+                        return Err("Failed to parse ICMPv6 Echo Reply".into());
+                    }
+                };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -177,7 +187,13 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
                 let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             Icmpv6Types::EchoRequest => {
-                let icmpv6_echo_request = EchoRequestPacket::new(icmpv6_packet.packet()).unwrap();
+                let icmpv6_echo_request = match EchoRequestPacket::new(icmpv6_packet.packet()) {
+                    Some(packet) => packet,
+                    None => {
+                        error!("Failed to parse ICMPv6 Echo Request");
+                        return Err("Failed to parse ICMPv6 Echo Request".into());
+                    }
+                };
 
                 let icmp_json = json!({
                     "npid": context.counter.next(),
@@ -200,7 +216,6 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
                 let _ = context.app_handle.emit("all_logs_event", icmp_json);
             }
             _ => {
-
                 let icmpv6_type: Icmpv6PacketType = icmpv6_packet.get_icmpv6_type().0.into();
 
                 let icmp_json = json!({
@@ -223,7 +238,7 @@ pub fn parse(ipv6_packet: &Ipv6Packet, context: &Context) -> Result<(), String> 
             }
         }
     } else {
-        println!(
+        warn!(
             "[{}]: Malformed ICMPv6 Packet",
             context.interface.name[..].to_string()
         );

@@ -1,5 +1,6 @@
 use pnet::{datalink::NetworkInterface, ipnetwork::IpNetwork};
 use serde::{Deserialize, Serialize};
+use log::{error, info};
 
 #[derive(Debug,Deserialize, Serialize)]
 pub struct NetIface {
@@ -49,6 +50,12 @@ pub fn get_net_ifaces() -> Vec<NetIface> {
         netface_list.push(netface);
     }
 
+    if netface_list.is_empty() {
+        error!("No network interfaces found");
+    } else {
+        info!("Found {} network interfaces", netface_list.len());
+    }
+
     return netface_list;
 }
 
@@ -62,10 +69,13 @@ pub fn get_net_iface_by_name(name: &str) -> Option<NetIface> {
 }
 
 fn get_mac_address(interface: &NetworkInterface) -> String {
-    interface
-    .mac
-    .map(|mac| mac.to_string())
-    .unwrap_or("".to_owned())
+    match interface.mac {
+        Some(mac) => mac.to_string(),
+        None => {
+            error!("MAC address not found for interface: {}", interface.name);
+            String::new()
+        }
+    }
 }
 
 fn get_ipv4_address(ips: &Vec<IpNetwork>) -> String {

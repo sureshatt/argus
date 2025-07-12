@@ -8,10 +8,10 @@
 
 /// This example shows a basic packet logger using libpnet
 extern crate pnet;
-
 use crate::network::layers;
 use crate::network::network_interface::NetIface;
 use crate::{AppState, Counter};
+use log::{error, info};
 use pnet::datalink::Channel::Ethernet;
 use pnet::datalink::{self, NetworkInterface};
 use std::sync::Arc;
@@ -29,14 +29,19 @@ pub struct Context<'a> {
 
 #[tauri::command]
 pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppState>) {
-    println!("selected interface: {}", selection);
+    info!("selected interface: {}", selection);
 
     // Find the network interface with the provided name
-    let interface = datalink::interfaces()
+    let interface = match datalink::interfaces()
         .into_iter()
-        .filter(|iface: &NetworkInterface| iface.name == selection)
-        .next()
-        .unwrap_or_else(|| panic!("No such network interface: {}", selection));
+        .find(|iface: &NetworkInterface| iface.name.to_lowercase() == selection.to_lowercase())
+    {
+        Some(iface) => iface,
+        None => {
+            error!("Error: No such network interface: {}", selection);
+            return;
+        }
+    };
 
     let selected_clone = state.selected.clone();
     let sequence_generator = state.counter.clone();
@@ -48,24 +53,71 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
-        Ok(_) => panic!("packetdump: unhandled channel type"),
-        Err(e) => panic!("packetdump: unable to create channel: {}", e),
+        Ok(_) => {
+            error!("Unhandled channel type. Only Ethernet is supported.");
+            return; // exit silently
+        }
+        Err(e) => {
+            error!("Failed to create datalink channel: {}", e);
+            return; // exit silently
+        }
     };
+
+    info!(" **** Starting packet dump on interface: {}", selection);
 
     thread::spawn(move || loop {
         // this logic kills the thread if the interface changes
-        let read_selected = selected_clone.read().unwrap().clone();
-        if read_selected != "" && read_selected != selection {
-            let mut basic_logs_store = basic_logs_store_arc.write().unwrap();
-            let mut detailed_logs_store = detailed_logs_store_arc.write().unwrap();
+        let read_selected = match selected_clone.read() {
+            Ok(selected) => selected.clone(),
+            Err(e) => {
+                error!("Failed to read selected interface: {}", e);
+                return;
+            }
+        };
+
+        if read_selected != "" && read_selected.to_lowercase() != selection.to_lowercase() {
+            let mut basic_logs_store = match basic_logs_store_arc.write() {
+                Ok(store) => store,
+                Err(e) => {
+                    error!("Failed to acquire write lock for basic_logs_store: {}", e);
+                    return;
+                }
+            };
+            let mut detailed_logs_store = match detailed_logs_store_arc.write() {
+                Ok(store) => store,
+                Err(e) => {
+                    error!(
+                        "Failed to acquire write lock for detailed_logs_store: {}",
+                        e
+                    );
+                    return;
+                }
+            };
             basic_logs_store.clear();
             detailed_logs_store.clear();
-            println!("Quitting the thread for: {} & clearning cache {} {}", selection, basic_logs_store.len(), detailed_logs_store.len());
+            info!(
+                "Quitting the thread for: {} & clearing cache {} {}",
+                selection,
+                basic_logs_store.len(),
+                detailed_logs_store.len()
+            );
             return;
         }
 
-        let counter = sequence_generator.read().unwrap();
-        let geo_ip_ranges = geo_ip_ranges.read().unwrap();
+        let counter = match sequence_generator.read() {
+            Ok(counter) => counter,
+            Err(e) => {
+                error!("Failed to acquire read lock for sequence_generator: {}", e);
+                return;
+            }
+        };
+        let geo_ip_ranges = match geo_ip_ranges.read() {
+            Ok(ranges) => ranges,
+            Err(e) => {
+                error!("Failed to acquire read lock for geo_ip_ranges: {}", e);
+                return;
+            }
+        };
 
         match rx.next() {
             Ok(packet) => {
@@ -81,7 +133,10 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
                 let _ = layers::process_packet(packet, &context);
                 thread::sleep(Duration::from_millis(500));
             }
-            Err(e) => panic!("packetdump: unable to receive packet: {}", e),
+            Err(e) => {
+                error!("packetdump: unable to receive packet: {}", e);
+                return;
+            }
         }
     });
 }

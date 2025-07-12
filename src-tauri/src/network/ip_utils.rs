@@ -1,13 +1,13 @@
-use std::net::IpAddr;
 use ipnetwork::IpNetwork;
 use pnet::ipnetwork;
+use serde::Deserialize;
 use std::error::Error;
+use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
-use serde::Deserialize;
-
 
 pub const LOCAL_ORIGIN: &str = "local";
+pub const UNKNOWN_ORIGIN: &str = "unknown";
 const CSV_DATA: &str = include_str!("../../assets/data.csv"); // https://db-ip.com/db/
 
 pub fn ip_in_any_cidr(ip_str: &str, cidr_list: &[String]) -> bool {
@@ -45,7 +45,6 @@ fn ip_to_u32(ip: &str) -> Option<u32> {
 }
 
 pub fn load_ip_ranges() -> Result<Vec<IpRange>, Box<dyn Error>> {
-    
     let mut rdr = csv::Reader::from_reader(CSV_DATA.as_bytes());
     let mut ranges = Vec::new();
 
@@ -88,11 +87,13 @@ pub fn lookup_country<'a>(ip_str: &str, ranges: &'a [IpRange]) -> Option<&'a str
     None
 }
 
-pub fn get_ip_origin<'a>(ip_str: &str, cidr_list: &[String], ranges: &'a [IpRange]) -> Option<String> {
-
+pub fn get_ip_origin<'a>(ip_str: &str, cidr_list: &[String], ranges: &'a [IpRange]) -> String {
     if ip_in_any_cidr(ip_str, cidr_list) {
-        Some(LOCAL_ORIGIN.to_string())
-    } else {
-        lookup_country(ip_str, ranges).map(|country| country.to_string())
+        return LOCAL_ORIGIN.to_string();
+    }
+
+    match lookup_country(ip_str, ranges).map(|country| country.to_string()) {
+        Some(country) => country,
+        None => UNKNOWN_ORIGIN.to_string(),
     }
 }

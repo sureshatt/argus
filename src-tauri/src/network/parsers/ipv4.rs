@@ -42,7 +42,6 @@ pub fn parse<'a>(
             &context.geo_ip_ranges,
         );
 
-
         let ipv4_json = json!({
             "npid": context.counter.next(),
             "parent": context.parent_counter.to_string(),
@@ -53,8 +52,8 @@ pub fn parse<'a>(
             "length": ipv4_packet.packet().len().to_string(),
             "info": "",
             "interface": context.interface.name.to_string(),
-            "source_ip_origin": source_ip_origin.unwrap_or("unknown".to_string()),
-            "destination_ip_origin": destination_ip_origin.unwrap_or("unknown".to_string()),
+            "source_ip_origin": source_ip_origin,
+            "destination_ip_origin": destination_ip_origin,
             "version": ipv4_packet.get_version().to_string(),
             "header_length": ipv4_packet.get_header_length().to_string(),
             "dscp": ipv4_packet.get_dscp().to_string(),

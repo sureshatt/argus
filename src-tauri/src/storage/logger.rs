@@ -1,5 +1,6 @@
 
 use std::sync::{Arc, Mutex};
+use log::{error, info};
 use tauri::{AppHandle, Emitter, Listener, State};
 use crate::storage::log_entry::BasicLogEntry;
 use crate::AppState;
@@ -7,7 +8,7 @@ use crate::AppState;
 
 pub(crate) fn listen_to_event(app_handle: &AppHandle, state: State<AppState>, max_number_of_logs: usize) {
 
-    println!("Listening to log events...");
+    info!("Listening to log events...");
 
     let app_handle_ref = Arc::new(Mutex::new(app_handle.clone()));
     let basic_logs_store_arc = Arc::clone(&state.basic_logs_store);
@@ -29,31 +30,53 @@ pub(crate) fn listen_to_event(app_handle: &AppHandle, state: State<AppState>, ma
                 match serde_json::from_str::<serde_json::Value>(event.payload()) {
                     Ok(json_payload) => {
                         
-                       BasicLogEntry::try_from(json_payload.clone())
-                            .map(|log_entry| {
-
-                                let mut basic_logs_store = basic_logs_store_ref.write().unwrap();
-                                let mut detailed_logs_store = detailed_logs_store_ref.write().unwrap();
+                        match BasicLogEntry::try_from(json_payload.clone()) {
+                            Ok(log_entry) => {
+                                let mut basic_logs_store = match basic_logs_store_ref.write() {
+                                    Ok(guard) => guard,
+                                    Err(e) => {
+                                        error!("Failed to acquire write lock for basic_logs_store: {}", e);
+                                        return;
+                                    }
+                                };
+                                let mut detailed_logs_store = match detailed_logs_store_ref.write() {
+                                    Ok(guard) => guard,
+                                    Err(e) => {
+                                        error!("Failed to acquire write lock for detailed_logs_store: {}", e);
+                                        return;
+                                    }
+                                };
 
                                 let current_number_of_logs = basic_logs_store.len();
                                 if current_number_of_logs == max_number_of_logs {
                                     basic_logs_store.pop_front();
                                 }
                                 basic_logs_store.push_back(log_entry.clone());
-                                detailed_logs_store.put(log_entry.npid.parse::<u32>().unwrap(), json_payload.to_string());
+                                match log_entry.npid.parse::<u32>() {
+                                    Ok(npid) => {
+                                        detailed_logs_store.put(npid, json_payload.to_string());
+                                    }
+                                    Err(e) => {
+                                        error!("Failed to parse npid as u32: {}", e);
+                                    }
+                                }
 
-                                publish_log_entry(&app_handle_ref.lock().unwrap(), &log_entry);
-
-
-                            })
-                            .unwrap_or_else(|e| {
-                                eprintln!("Failed to parse log entry: {}", e);
-                            });
-
-                        
+                                match app_handle_ref.lock() {
+                                    Ok(app_handle) => {
+                                        publish_log_entry(&app_handle, &log_entry);
+                                    }
+                                    Err(e) => {
+                                        error!("Failed to acquire lock for app_handle_ref: {}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                error!("Failed to parse log entry: {}", e);
+                            }
+                        }
                     }
                     Err(e) => {
-                        eprintln!("Failed to parse JSON payload: {}", e);
+                        error!("Failed to parse JSON payload: {}", e);
                     }
                 }
             });

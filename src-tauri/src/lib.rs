@@ -64,6 +64,17 @@ impl Counter {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
+    info!("Starting Argus application...");
+
+    let geo_ip_ranges = match load_ip_ranges() {
+        Ok(ranges) => ranges,
+        Err(e) => {
+            error!("Failed to load IP ranges: {}", e);
+            Vec::new()
+        }
+    };
+    info!("Loaded {} IP ranges", geo_ip_ranges.len());
+
     let max_number_of_logs = 1000;
     let cap = match NonZero::new(max_number_of_logs) {
         Some(c) => c,
@@ -77,10 +88,8 @@ pub async fn run() {
         max_number_of_logs
     );
 
-    let detailed_logs_store: LruCache<u32, String> = LruCache::new(cap);
-
     let sq_counter = Counter::new();
-    let geo_ip_ranges = load_ip_ranges().unwrap();
+    let detailed_logs_store: LruCache<u32, String> = LruCache::new(cap);
     let basic_logs_store: VecDeque<BasicLogEntry> = VecDeque::new();
 
     let app_state = AppState {
@@ -95,7 +104,7 @@ pub async fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .manage(app_state)
         .plugin(
-            Builder::new()// https://v2.tauri.app/plugin/logging/
+            Builder::new() // https://v2.tauri.app/plugin/logging/
                 .targets([
                     Target::new(TargetKind::LogDir {
                         file_name: Some("logs".to_string()),
@@ -115,15 +124,26 @@ pub async fn run() {
             dump
         ])
         .setup(move |app| {
-            let window = app.get_webview_window("main").unwrap();
-            window.maximize().unwrap();
+            let window = match app.get_webview_window("main") {
+                Some(w) => w,
+                None => {
+                    error!("Failed to get main webview window");
+                    return Err(Box::<dyn std::error::Error>::from("Main window not found"));
+                }
+            };
+            if let Err(e) = window.maximize() {
+                error!("Failed to maximize window: {}", e);
+            }
             let app_handle = app.handle().clone();
             listen_to_event(&app_handle, app.state::<AppState>(), max_number_of_logs);
             publish_stats(&app_handle, app.state::<AppState>());
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .map_err(|e| {
+            error!("Error while running tauri application: {}", e);
+        })
+        .ok();
 
     info!("Argus application has started successfully");
 }
