@@ -150,7 +150,11 @@ function IPAddressesGraph() {
 
   const fetchData = async (arp_stats: ArpStat[]) => {
     const graphData = createGraphData(arp_stats);
-    await drawTopology(graphData);
+    try {
+      await drawTopology(graphData);
+    } catch (err) {
+      error("Error drawing ARP stats graph: " + String(err));
+    }
   };
 
   useEffect(() => {
