@@ -1,24 +1,18 @@
 #!/bin/bash
 set -e
 
-RESOURCES="$PACKAGE_PATH/Contents/Resources"
-HELPER_DEST="/Library/PrivilegedHelperTools/com.argus.chmodbpf"
-PLIST_DEST="/Library/LaunchDaemons/com.argus.chmodbpf.plist"
+PLIST="/Library/LaunchDaemons/com.argus.chmodbpf.plist"
 
-# Ensure destination directories exist
-mkdir -p /Library/PrivilegedHelperTools
-mkdir -p /Library/LaunchDaemons
-
-# Install helper binary: root-owned, executable by group/world
-install -o root -g wheel -m 755 "$RESOURCES/chmodbpf" "$HELPER_DEST"
-
-# Install LaunchDaemon plist: root-owned, world-readable
-install -o root -g wheel -m 644 "$RESOURCES/com.argus.chmodbpf.plist" "$PLIST_DEST"
+# Ensure correct ownership on installed files (pkgbuild payload preserves build-time ownership)
+chown root:wheel "/Library/PrivilegedHelperTools/com.argus.chmodbpf"
+chmod 755 "/Library/PrivilegedHelperTools/com.argus.chmodbpf"
+chown root:wheel "$PLIST"
+chmod 644 "$PLIST"
 
 # Unload existing daemon if running (ignore error on first install)
-/bin/launchctl unload "$PLIST_DEST" 2>/dev/null || true
+/bin/launchctl unload "$PLIST" 2>/dev/null || true
 
 # Load and run the daemon immediately — no reboot required
-/bin/launchctl load "$PLIST_DEST"
+/bin/launchctl load "$PLIST"
 
 exit 0

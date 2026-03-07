@@ -76,7 +76,7 @@ Interface selection
 - `src-tauri/src/storage/log_analytics.rs` — statistics computation
 - `src-tauri/src/network/layers/` — OSI layer parsers
 - `src-tauri/src/network/parsers/` — protocol-specific parsers
-- `src-tauri/src/bin/chmodbpf.rs` — privileged helper binary; sets `/dev/bpf*` to `root:admin 0640`, run as root via LaunchDaemon
+- `src-tauri/src/bin/chmodbpf.rs` — privileged helper binary; sets `/dev/bpf*` to `root:admin 0660`, run as root via LaunchDaemon
 - `src-tauri/entitlements.plist` — macOS entitlements (no sandbox; required for raw BPF access)
 
 ### Visualization Libraries
@@ -96,7 +96,7 @@ Interface selection
 
 ### macOS BPF Permissions
 
-macOS requires `/dev/bpf*` devices to be readable by the `admin` group for packet capture. This is handled via the **ChmodBPF LaunchDaemon pattern** (same as Wireshark):
+macOS requires `/dev/bpf*` devices to be opened with `O_RDWR` by `pnet` for packet capture. This requires `admin` group **read+write** (`0660`) access. This is handled via the **ChmodBPF LaunchDaemon pattern** (same as Wireshark):
 
 - `packaging/macos/com.argus.chmodbpf.plist` — LaunchDaemon plist; runs helper as root at boot
 - `packaging/macos/scripts/postinstall` — PKG postinstall script; installs daemon + binary with one-time admin prompt
@@ -110,3 +110,13 @@ Argus.dmg
 ```
 
 The `check_capture_permissions` Tauri command probes `/dev/bpf0` readability at startup. If denied, the `AvailableNetworkInterfaces` card shows a "Permission Required" alert guiding the user to run the installer.
+
+**Dev mode BPF permissions (temporary, resets on reboot):**
+```bash
+sudo chmod 660 /dev/bpf*
+```
+Without this, `pnet` fails with a misleading "No such file or directory" error: it tries `/dev/bpf0`–`/dev/bpf3` with `O_RDWR`, gets `EACCES` on each (silently skipped), then tries `/dev/bpf4` (non-existent) and returns `ENOENT`.
+
+### Cargo bin configuration
+
+`src-tauri/Cargo.toml` sets `autobins = false` with an explicit `[[bin]] name = "argus"`. This is required because Tauri CLI 2.x runs **all** compiled binaries after `cargo build`. Without this, `src/bin/chmodbpf.rs` is auto-discovered, compiled, and executed by Tauri — which fails immediately since `chmodbpf` needs root to `chmod /dev/bpf*`. The `build-macos-pkg.sh` script compiles `chmodbpf` separately via `rustc` directly and is unaffected by this setting.

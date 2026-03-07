@@ -28,7 +28,7 @@ fn main() {
                 eprintln!("chmodbpf: chown failed for {}: {}", path_str, e);
             }
 
-            if let Err(e) = fs::set_permissions(&path, PermissionsExt::from_mode(0o640)) {
+            if let Err(e) = fs::set_permissions(&path, PermissionsExt::from_mode(0o660)) {
                 eprintln!("chmodbpf: chmod failed for {}: {}", path_str, e);
             }
         }

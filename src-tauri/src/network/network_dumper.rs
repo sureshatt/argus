@@ -17,7 +17,7 @@ use pnet::datalink::{self, NetworkInterface};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 
 pub struct Context<'a> {
     pub interface: &'a NetIface,
@@ -60,11 +60,7 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         }
         Err(e) => {
             error!("Failed to create datalink channel: {}", e);
-            let is_permission_error = e
-                .downcast_ref::<std::io::Error>()
-                .map(|io_err| io_err.kind() == std::io::ErrorKind::PermissionDenied)
-                .unwrap_or(false);
-            if is_permission_error {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
                 let _ = app_handle.emit("bpf_permission_error", ());
             } else {
                 let _ = app_handle.emit("capture_error", e.to_string());
