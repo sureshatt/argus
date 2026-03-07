@@ -18,8 +18,14 @@ async function stopNetworkLogs() {
     return await invoke("stop_dump")
 }
 
+async function checkCapturePermissions(): Promise<boolean> {
+    info("Checking BPF capture permissions");
+    return await invoke<boolean>("check_capture_permissions");
+}
+
 export const Network = {
     getAvailableNetworkInterfaces,
     getNetworkLogs,
-    stopNetworkLogs
+    stopNetworkLogs,
+    checkCapturePermissions
 }

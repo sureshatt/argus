@@ -1,6 +1,7 @@
 import { HTMLProps, useEffect, useRef, useState } from "react";
 import { NetworkInterface } from "../../types";
 import { warn, info, error } from '@tauri-apps/plugin-log';
+import { listen } from "@tauri-apps/api/event";
 
 import {
   ColumnDef,
@@ -10,11 +11,14 @@ import {
 } from "@tanstack/react-table";
 import { Network } from "../../services/network";
 import { useNetStore } from "../../stores/net.store";
+import Alert from "../../components/alert/Alert";
+import { errors } from "../../errors";
 
 interface Props {}
 
 function DataTable({}: Props) {
   const [data, setData] = useState<NetworkInterface[]>([]);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const { setCurrentInterface, currentInterface } = useNetStore();
 
@@ -67,6 +71,12 @@ function DataTable({}: Props) {
 
   useEffect(() => {
     (async () => {
+      const hasPermission = await Network.checkCapturePermissions();
+      if (!hasPermission) {
+        error("BPF capture permission denied");
+        setPermissionDenied(true);
+        return;
+      }
       const d = await Network.getAvailableNetworkInterfaces();
       if (d === undefined) {
         error("Failed to fetch network interfaces");
@@ -80,6 +90,21 @@ function DataTable({}: Props) {
       setData(d);
     })();
   }, []);
+
+  useEffect(() => {
+    const unlisten = listen("bpf_permission_error", () => {
+      setPermissionDenied(true);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  if (permissionDenied) {
+    return (
+      <Alert title="Permission Required" value={errors.bpf_permission_denied} />
+    );
+  }
 
   return (
     <div className="size-full font-quantic ">

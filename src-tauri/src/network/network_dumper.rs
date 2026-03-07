@@ -55,11 +55,21 @@ pub fn dump(selection: String, app_handle: tauri::AppHandle, state: State<AppSta
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => {
             error!("Unhandled channel type. Only Ethernet is supported.");
-            return; // exit silently
+            let _ = app_handle.emit("capture_error", "Unhandled channel type. Only Ethernet is supported.");
+            return;
         }
         Err(e) => {
             error!("Failed to create datalink channel: {}", e);
-            return; // exit silently
+            let is_permission_error = e
+                .downcast_ref::<std::io::Error>()
+                .map(|io_err| io_err.kind() == std::io::ErrorKind::PermissionDenied)
+                .unwrap_or(false);
+            if is_permission_error {
+                let _ = app_handle.emit("bpf_permission_error", ());
+            } else {
+                let _ = app_handle.emit("capture_error", e.to_string());
+            }
+            return;
         }
     };
 

@@ -38,6 +38,17 @@ fn set_selection(state: State<AppState>, selection: String) {
 }
 
 #[tauri::command]
+fn check_capture_permissions() -> bool {
+    // Attempt to open /dev/bpf0 for reading.
+    // Returns true if the current process has BPF read access (ChmodBPF daemon is active).
+    // ENOENT (device not yet created) is treated as no permission.
+    std::fs::OpenOptions::new()
+        .read(true)
+        .open("/dev/bpf0")
+        .is_ok()
+}
+
+#[tauri::command]
 fn get_network_interfaces() -> Vec<NetIface> {
     get_net_ifaces()
         .into_iter()
@@ -121,7 +132,8 @@ pub async fn run() {
             get_network_interfaces,
             set_selection,
             get_packet_data,
-            dump
+            dump,
+            check_capture_permissions
         ])
         .setup(move |app| {
             let window = match app.get_webview_window("main") {
